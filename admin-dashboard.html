@@ -275,6 +275,37 @@
         </main>
     </div>
 
+    <!-- Edit Episode Modal -->
+    <div id="editModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="card-title">エピソードを編集</h3>
+                <button id="closeEditModal" class="close-btn">&times;</button>
+            </div>
+            <form id="editEpisodeForm">
+                <input type="hidden" id="editEpisodeId">
+                <div class="form-group">
+                    <label for="editEpisodeTitle" class="form-label">タイトル</label>
+                    <input type="text" id="editEpisodeTitle" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEpisodeDescription" class="form-label">説明</label>
+                    <textarea id="editEpisodeDescription" class="form-textarea" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editEpisodeAudio" class="form-label">音声ファイル</label>
+                    <select id="editEpisodeAudio" class="form-input" required>
+                        <!-- Options will be populated by JS -->
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancelEditBtn" class="btn btn-secondary">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">変更を保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // ===== CONFIGURATION =====
         const WORKER_URL = "https://radio-app-r2-uploader.str-radio.workers.dev";
@@ -299,6 +330,10 @@
             bindEvents() {
                 document.getElementById('logoutBtn').addEventListener('click', this.logout);
                 document.getElementById('uploadForm').addEventListener('submit', (e) => this.handleUpload(e));
+                document.getElementById('newEpisodeForm').addEventListener('submit', (e) => this.handleCreateEpisode(e));
+                document.getElementById('editEpisodeForm').addEventListener('submit', (e) => this.handleUpdateEpisode(e));
+                document.getElementById('closeEditModal').addEventListener('click', () => this.closeEditModal());
+                document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
             }
 
             async loadInitialData() {
@@ -366,15 +401,17 @@
                         </div>
                         <div class="episode-actions">
                             <button class="btn btn-secondary btn-notify" data-episode-id="${ep.id}">通知</button>
-                            <button class="btn btn-secondary" data-episode-id="${ep.id}">編集</button>
+                            <button class="btn btn-secondary btn-edit" data-episode-id="${ep.id}">編集</button>
                             <button class="btn btn-danger" data-episode-id="${ep.id}">削除</button>
                         </div>
                     `;
+                    item.dataset.episodeId = ep.id;
                     listElement.appendChild(item);
                 });
 
                 // イベントリスナーを再設定
                 this.addNotificationEventListeners();
+                this.addEditEventListeners();
             }
 
             addNotificationEventListeners() {
@@ -382,6 +419,95 @@
                 notifyButtons.forEach(button => {
                     button.addEventListener('click', (e) => this.handleNotify(e));
                 });
+            }
+
+            addEditEventListeners() {
+                const editButtons = document.querySelectorAll('.btn-edit');
+                editButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const episodeId = e.target.closest('.episode-item').dataset.episodeId;
+                        this.openEditModal(episodeId);
+                    });
+                });
+            }
+
+            async openEditModal(episodeId) {
+                // episodes.jsonから最新の情報を取得
+                const response = await fetch(`https://str5150.github.io/radio-app-github/episodes.json?t=${new Date().getTime()}`);
+                const data = await response.json();
+                const episode = data.episodes.find(ep => ep.id === episodeId);
+
+                if (!episode) {
+                    alert('エピソードが見つかりません。');
+                    return;
+                }
+
+                document.getElementById('editEpisodeId').value = episode.id;
+                document.getElementById('editEpisodeTitle').value = episode.title;
+                document.getElementById('editEpisodeDescription').value = episode.description;
+
+                // 音声ファイルドロップダウンを生成
+                const audioSelect = document.getElementById('editEpisodeAudio');
+                audioSelect.innerHTML = ''; // クリア
+                
+                const listResponse = await fetch(WORKER_URL);
+                const files = await listResponse.json();
+                files.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = `${R2_PUBLIC_URL}/${file.key}`;
+                    option.textContent = file.key;
+                    if (option.value === episode.audioUrl) {
+                        option.selected = true;
+                    }
+                    audioSelect.appendChild(option);
+                });
+
+                document.getElementById('editModal').style.display = 'flex';
+            }
+
+            closeEditModal() {
+                document.getElementById('editModal').style.display = 'none';
+            }
+
+            async handleUpdateEpisode(e) {
+                e.preventDefault();
+                const saveBtn = e.target.querySelector('button[type="submit"]');
+                saveBtn.disabled = true;
+                saveBtn.textContent = '保存中...';
+
+                const episodeData = {
+                    id: document.getElementById('editEpisodeId').value,
+                    title: document.getElementById('editEpisodeTitle').value,
+                    description: document.getElementById('editEpisodeDescription').value,
+                    audioUrl: document.getElementById('editEpisodeAudio').value,
+                };
+
+                try {
+                    const response = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Action': 'update_episode'
+                        },
+                        body: JSON.stringify(episodeData)
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`エピソードの更新に失敗しました: ${errorText}`);
+                    }
+
+                    alert('エピソードが更新されました！');
+                    this.closeEditModal();
+                    await this.fetchAndRenderEpisodes();
+
+                } catch (error) {
+                    console.error('Update episode error:', error);
+                    alert(error.message);
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '変更を保存';
+                }
             }
 
             async handleNotify(e) {
@@ -590,7 +716,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const app = new AdminDashboard();
             // イベントリスナーをここで登録
-            document.getElementById('newEpisodeForm').addEventListener('submit', (e) => app.handleCreateEpisode(e));
+            // document.getElementById('newEpisodeForm').addEventListener('submit', (e) => app.handleCreateEpisode(e)); // This is now handled by bindEvents
         });
     </script>
 </body>

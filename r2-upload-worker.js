@@ -38,6 +38,9 @@ export default {
         if (action === 'notify') {
           return await handleNotification(request, env); // 通知送信
         }
+        if (action === 'update_episode') {
+          return await handleUpdateEpisodeRequest(request, env); // エピソード更新
+        }
         // actionがなければ通常のファイルアップロード
         return await handlePostRequest(request, env);
       
@@ -114,6 +117,71 @@ async function handleGetRequest(request, env) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
+}
+
+/**
+ * POSTリクエストを処理して特定のエピソードを更新する
+ */
+async function handleUpdateEpisodeRequest(request, env) {
+    if (!env.GITHUB_TOKEN) {
+        return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+    }
+
+    try {
+        const updatedEpisodeData = await request.json();
+
+        // 1. 現在のepisodes.jsonを取得
+        const fileResponse = await fetch(GITHUB_API_URL, {
+            headers: { 'Authorization': `token ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker-Radio-App' }
+        });
+
+        if (!fileResponse.ok) {
+            throw new Error(`Failed to fetch episodes.json: ${fileResponse.statusText}`);
+        }
+
+        const fileData = await fileResponse.json();
+        const currentContent = JSON.parse(atob(fileData.content));
+        const currentSha = fileData.sha;
+
+        // 2. 該当のエピソードを検索して更新
+        const episodeIndex = currentContent.episodes.findIndex(ep => ep.id === updatedEpisodeData.id);
+        if (episodeIndex === -1) {
+            return new Response(JSON.stringify({ success: false, error: 'Episode not found.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+        }
+        
+        // 既存のデータを保持しつつ、新しいデータで上書き
+        currentContent.episodes[episodeIndex] = { ...currentContent.episodes[episodeIndex], ...updatedEpisodeData };
+
+        // 3. 更新した内容でGitHubにプッシュ
+        const updatedContent = JSON.stringify(currentContent, null, 2);
+        const updateResponse = await fetch(GITHUB_API_URL, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker-Radio-App', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: `Update episode: ${updatedEpisodeData.title}`,
+                content: btoa(updatedContent),
+                sha: currentSha,
+                branch: 'main',
+            }),
+        });
+
+        if (!updateResponse.ok) {
+            const errorBody = await updateResponse.text();
+            throw new Error(`Failed to update episodes.json: ${updateResponse.statusText} - ${errorBody}`);
+        }
+
+        return new Response(JSON.stringify({ success: true, message: 'Episode updated successfully!' }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+    } catch (e) {
+        console.error('Update Episode Error:', e);
+        return new Response(JSON.stringify({ success: false, error: e.message }), { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    }
 }
 
 /**
