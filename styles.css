@@ -359,7 +359,7 @@ body {
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .like-btn:hover, .comment-btn:hover {
@@ -368,18 +368,17 @@ body {
 }
 
 .like-btn.liked {
-    background-color: #ff6b6b;
-    border-color: #ff6b6b;
-    color: white;
+    color: #1a1a1a;
+    border-color: #1a1a1a;
 }
 
-.like-btn.liked:hover {
-    background-color: #ff5252;
-    border-color: #ff5252;
+.like-btn.liked .like-icon {
+    fill: #1a1a1a;
+    stroke: #1a1a1a;
 }
 
 .like-icon, .comment-icon {
-    font-size: 16px;
+    transition: all 0.2s ease;
 }
 
 .like-count, .comment-count {
