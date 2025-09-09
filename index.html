@@ -136,5 +136,45 @@
     </div>
 
     <script src="app.js"></script>
+
+    <!-- Full Screen Player -->
+    <div class="now-playing-screen" id="nowPlayingScreen">
+        <div class="now-playing__header">
+            <button class="control-btn" id="closePlayerBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <span class="now-playing__title-header">再生中</span>
+            <button class="control-btn" style="opacity: 0;"> <!-- Placeholder for alignment -->
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="now-playing__content">
+            <img src="covers/cover-500x500.png" alt="Episode Cover" id="nowPlayingCover" class="now-playing__cover">
+            <div class="now-playing__info">
+                <h2 id="nowPlayingTitle" class="now-playing__title">エピソードのタイトル</h2>
+                <p id="nowPlayingDescription" class="now-playing__description">エピソードの説明</p>
+            </div>
+            <div class="now-playing__progress">
+                <input type="range" id="nowPlayingProgressBar" class="progress-bar-large" value="0" min="0" max="100" step="0.1">
+                <div class="time-display">
+                    <span id="nowPlayingCurrentTime">0:00</span>
+                    <span id="nowPlayingDuration">0:00</span>
+                </div>
+            </div>
+            <div class="now-playing__controls">
+                <button id="nowPlayingPrevBtn" class="control-btn">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"></path></svg>
+                </button>
+                <button id="nowPlayingPlayPauseBtn" class="control-btn play-btn-large">
+                    <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48"><path d="M8 5v14l11-7z"></path></svg>
+                    <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                </button>
+                <button id="nowPlayingNextBtn" class="control-btn">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M16 6h2v12h-2zm-4.5 6l-8.5 6V6z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

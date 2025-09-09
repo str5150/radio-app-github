@@ -103,6 +103,18 @@ class RadioApp {
             viewGridBtn: document.getElementById('viewGridBtn'),
             viewListBtn: document.getElementById('viewListBtn'),
             filterButtons: document.querySelectorAll('.filter-btn'),
+            // Now Playing Screen elements
+            nowPlayingScreen: document.getElementById('nowPlayingScreen'),
+            closePlayerBtn: document.getElementById('closePlayerBtn'),
+            nowPlayingCover: document.getElementById('nowPlayingCover'),
+            nowPlayingTitle: document.getElementById('nowPlayingTitle'),
+            nowPlayingDescription: document.getElementById('nowPlayingDescription'),
+            nowPlayingProgressBar: document.getElementById('nowPlayingProgressBar'),
+            nowPlayingCurrentTime: document.getElementById('nowPlayingCurrentTime'),
+            nowPlayingDuration: document.getElementById('nowPlayingDuration'),
+            nowPlayingPrevBtn: document.getElementById('nowPlayingPrevBtn'),
+            nowPlayingPlayPauseBtn: document.getElementById('nowPlayingPlayPauseBtn'),
+            nowPlayingNextBtn: document.getElementById('nowPlayingNextBtn'),
         };
         
         this.currentCommentEpisode = null;
@@ -134,6 +146,23 @@ class RadioApp {
         this.elements.filterButtons.forEach(btn => {
             btn.addEventListener('click', (e) => this.filterAndSortEpisodes(e.target.dataset.filter));
         });
+
+        // Now Playing Screen events
+        document.getElementById('audioPlayer').addEventListener('click', () => this.openPlayerScreen());
+        this.elements.closePlayerBtn.addEventListener('click', () => this.closePlayerScreen());
+        this.elements.nowPlayingPlayPauseBtn.addEventListener('click', () => this.togglePlayPause());
+        this.elements.nowPlayingProgressBar.addEventListener('input', (e) => this.seekTo(e.target.value));
+        this.elements.nowPlayingNextBtn.addEventListener('click', () => this.playNext());
+        this.elements.nowPlayingPrevBtn.addEventListener('click', () => this.playPrev());
+    }
+
+    openPlayerScreen() {
+        if (this.currentEpisodeIndex === -1) return; // Don't open if nothing is playing
+        this.elements.nowPlayingScreen.classList.add('visible');
+    }
+
+    closePlayerScreen() {
+        this.elements.nowPlayingScreen.classList.remove('visible');
     }
 
     async fetchEpisodes() {
@@ -228,10 +257,16 @@ class RadioApp {
     }
 
     updatePlayerUI(episode) {
+        // Mini Player
         this.elements.playerCover.src = episode.coverImage;
         this.elements.playerTitle.textContent = episode.title;
         this.elements.playerDescription.textContent = episode.description;
         document.getElementById('audioPlayer').classList.add('visible');
+
+        // Full Screen Player
+        this.elements.nowPlayingCover.src = episode.coverImage;
+        this.elements.nowPlayingTitle.textContent = episode.title;
+        this.elements.nowPlayingDescription.textContent = episode.description;
     }
 
     togglePlayPause() {
@@ -249,6 +284,7 @@ class RadioApp {
     }
 
     updatePlayPauseIcon() {
+        // Mini Player
         const playIcon = this.elements.playPauseBtn.querySelector('.play-icon');
         const pauseIcon = this.elements.playPauseBtn.querySelector('.pause-icon');
         if (this.isPlaying) {
@@ -258,16 +294,38 @@ class RadioApp {
             playIcon.style.display = 'block';
             pauseIcon.style.display = 'none';
         }
+        
+        // Full Screen Player
+        const fullPlayIcon = this.elements.nowPlayingPlayPauseBtn.querySelector('.play-icon');
+        const fullPauseIcon = this.elements.nowPlayingPlayPauseBtn.querySelector('.pause-icon');
+         if (this.isPlaying) {
+            fullPlayIcon.style.display = 'none';
+            fullPauseIcon.style.display = 'block';
+        } else {
+            fullPlayIcon.style.display = 'block';
+            fullPauseIcon.style.display = 'none';
+        }
     }
 
     updateProgress() {
         const progress = (this.audio.currentTime / this.audio.duration) * 100;
+        const formattedTime = this.formatTime(this.audio.currentTime);
+
+        // Mini Player
         this.elements.progressBar.value = isNaN(progress) ? 0 : progress;
-        this.elements.currentTime.textContent = this.formatTime(this.audio.currentTime);
+        this.elements.currentTime.textContent = formattedTime;
+
+        // Full Screen Player
+        this.elements.nowPlayingProgressBar.value = isNaN(progress) ? 0 : progress;
+        this.elements.nowPlayingCurrentTime.textContent = formattedTime;
     }
 
     updateDuration() {
-        this.elements.duration.textContent = this.formatTime(this.audio.duration);
+        const formattedDuration = this.formatTime(this.audio.duration);
+        // Mini Player
+        this.elements.duration.textContent = formattedDuration;
+        // Full Screen Player
+        this.elements.nowPlayingDuration.textContent = formattedDuration;
     }
 
     seekTo(value) {
