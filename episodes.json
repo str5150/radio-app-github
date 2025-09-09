@@ -1,6 +1,18 @@
 {
   "episodes": [
     {
+      "id": "episode-1757398189407",
+      "title": "008",
+      "description": "008",
+      "audioUrl": "https://pub-26d657ea5e9642a09c6962ab87ca19e8.r2.dev/episode-006.mp3",
+      "coverImage": "covers/cover-400x400.png",
+      "duration": "00:00",
+      "publishedAt": "2025-09-09T06:09:49.407Z",
+      "tags": [],
+      "likes": 0,
+      "comments": []
+    },
+    {
       "id": "episode-001",
       "title": "ウェルカムエピソード",
       "description": "ラジオアプリへようこそ！このエピソードでは、アプリの使い方や今後の予定についてお話しします。",
@@ -8,7 +20,10 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "15:30",
       "publishedAt": "2024-01-15T10:00:00Z",
-      "tags": ["ウェルカム", "紹介"],
+      "tags": [
+        "ウェルカム",
+        "紹介"
+      ],
       "likes": 0,
       "comments": []
     },
@@ -20,7 +35,11 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "25:10",
       "publishedAt": "2024-01-22T10:00:00Z",
-      "tags": ["技術", "Web開発", "PWA"],
+      "tags": [
+        "技術",
+        "Web開発",
+        "PWA"
+      ],
       "likes": 0,
       "comments": []
     },
@@ -32,7 +51,11 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "30:05",
       "publishedAt": "2024-01-29T10:00:00Z",
-      "tags": ["クリエイティブ", "デザイン", "アート"],
+      "tags": [
+        "クリエイティブ",
+        "デザイン",
+        "アート"
+      ],
       "likes": 0,
       "comments": []
     }
