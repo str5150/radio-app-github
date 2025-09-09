@@ -88,7 +88,7 @@ class RadioApp {
             progressBar: document.getElementById('progressBar'), // Will be null, handled below
             currentTime: document.getElementById('currentTime'), // Will be null, handled below
             duration: document.getElementById('duration'),       // Will be null, handled below
-            volumeSlider: document.getElementById('volumeSlider'),
+            
             speedButtons: document.querySelectorAll('.speed-btn'),  // Will be null, handled below
             subscribeBtn: document.getElementById('subscribeBtn'),
             prevBtn: document.getElementById('prevBtn'),           // Will be null, handled below
@@ -140,7 +140,7 @@ class RadioApp {
                 btn.addEventListener('click', (e) => this.setPlaybackSpeed(parseFloat(e.target.dataset.speed)));
             });
         }
-        this.elements.volumeSlider.addEventListener('input', (e) => this.setVolume(e.target.value));
+        
         this.elements.subscribeBtn.addEventListener('click', subscribeUserToPush);
 
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -351,14 +351,10 @@ class RadioApp {
         this.audio.currentTime = time;
     }
 
-    setVolume(value) {
-        this.audio.volume = value;
-    }
-
     setPlaybackSpeed(speed) {
         this.audio.playbackRate = parseFloat(speed);
-        this.elements.speedButtons.forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.speed-btn[data-speed="${speed}"]`).classList.add('active');
+        // This was trying to access elements in the old mini player
+        // It's now handled only in the full screen player
     }
     
     formatTime(seconds) {
