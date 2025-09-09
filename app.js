@@ -115,9 +115,15 @@ class RadioApp {
             nowPlayingPrevBtn: document.getElementById('nowPlayingPrevBtn'),
             nowPlayingPlayPauseBtn: document.getElementById('nowPlayingPlayPauseBtn'),
             nowPlayingNextBtn: document.getElementById('nowPlayingNextBtn'),
+            // Mini-player specific
+            miniPlayerTouchable: document.getElementById('miniPlayerTouchable'),
+            closeMiniPlayerBtn: document.getElementById('closeMiniPlayerBtn'),
         };
         
         this.currentCommentEpisode = null;
+        this.touchStartX = 0;
+        this.touchMoveX = 0;
+        this.isSwiping = false;
 
         this.bindEvents();
         this.fetchEpisodes();
@@ -157,8 +163,19 @@ class RadioApp {
             btn.addEventListener('click', (e) => this.filterAndSortEpisodes(e.target.dataset.filter));
         });
 
+        // Mini Player close and swipe
+        this.elements.closeMiniPlayerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.dismissMiniPlayer();
+        });
+
+        this.elements.audioPlayer.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
+        this.elements.audioPlayer.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
+        this.elements.audioPlayer.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+
+
         // Now Playing Screen events
-        document.getElementById('audioPlayer').addEventListener('click', () => this.openPlayerScreen());
+        this.elements.miniPlayerTouchable.addEventListener('click', () => this.openPlayerScreen());
         this.elements.closePlayerBtn.addEventListener('click', () => this.closePlayerScreen());
         this.elements.nowPlayingPlayPauseBtn.addEventListener('click', () => this.togglePlayPause());
         if (this.elements.nowPlayingProgressBar) {
@@ -190,9 +207,54 @@ class RadioApp {
         this.elements.nowPlayingScreen.classList.remove('visible');
     }
 
+    dismissMiniPlayer() {
+        this.elements.audioPlayer.classList.remove('visible');
+        if (this.isPlaying) {
+            this.audio.pause();
+            this.isPlaying = false;
+            this.updatePlayPauseIcon();
+        }
+    }
+
+    handleTouchStart(e) {
+        this.touchStartX = e.touches[0].clientX;
+        this.isSwiping = false;
+        this.elements.audioPlayer.style.transition = 'none';
+    }
+
+    handleTouchMove(e) {
+        this.touchMoveX = e.touches[0].clientX;
+        const diffX = this.touchMoveX - this.touchStartX;
+        if (Math.abs(diffX) > 10) { // Start swiping
+            this.isSwiping = true;
+        }
+        if (this.isSwiping && diffX < 0) { // Only allow left swipe
+             this.elements.audioPlayer.style.transform = `translateX(${diffX}px)`;
+        }
+    }
+
+    handleTouchEnd(e) {
+        const diffX = this.touchMoveX - this.touchStartX;
+        this.elements.audioPlayer.style.transition = 'transform 0.3s ease, bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+
+        if (this.isSwiping && diffX < -50) { // Threshold for dismiss
+            this.elements.audioPlayer.style.transform = 'translateX(-150%)';
+            setTimeout(() => {
+                this.dismissMiniPlayer();
+                this.elements.audioPlayer.style.transform = 'translateX(0)';
+            }, 300);
+        } else {
+            this.elements.audioPlayer.style.transform = 'translateX(0)';
+        }
+
+        this.touchStartX = 0;
+        this.touchMoveX = 0;
+        this.isSwiping = false;
+    }
+
     async fetchEpisodes() {
         try {
-            const response = await fetch('episodes.json');
+            const response = await fetch(`episodes.json?t=${new Date().getTime()}`);
             if (!response.ok) {
                 throw new Error('Failed to load episodes.json');
             }
@@ -245,6 +307,8 @@ class RadioApp {
 
         card.addEventListener('click', (e) => {
             if (e.target.closest('.like-btn') || e.target.closest('.comment-btn')) return;
+            // Don't play if we are swiping the mini-player
+            if (this.isSwiping) return;
             this.playEpisode(index);
         });
 

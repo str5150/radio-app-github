@@ -65,19 +65,23 @@
                 </div>
             </section>
         </main>
-    </div>
 
     <!-- Mini Player -->
     <div id="audioPlayer" class="audio-player">
-        <img src="covers/cover-100x100.png" alt="Episode Cover" id="playerCover" class="player-cover-mini">
-        <div class="player-info-mini">
-            <div id="playerTitle" class="player-title-mini">エピソードを選択</div>
-            <div id="playerDescription" class="player-description-mini"></div>
+        <div id="miniPlayerTouchable" class="mini-player-touchable">
+            <img src="covers/cover-100x100.png" alt="Episode Cover" id="playerCover" class="player-cover-mini">
+            <div class="player-info-mini">
+                <div id="playerTitle" class="player-title-mini">エピソードを選択</div>
+                <div id="playerDescription" class="player-description-mini"></div>
+            </div>
         </div>
         <div class="player-controls-mini">
             <button id="playPauseBtn" class="control-btn">
                 <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M8 5v14l11-7z"></path></svg>
                 <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+            </button>
+            <button id="closeMiniPlayerBtn" class="control-btn close-mini-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
         </div>
     </div>

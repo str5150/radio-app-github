@@ -424,6 +424,14 @@ body {
     cursor: pointer;
 }
 
+.mini-player-touchable {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
 .audio-player.visible {
     bottom: 16px;
 }
@@ -459,6 +467,9 @@ body {
 
 .player-controls-mini {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .player-controls-mini .control-btn {
@@ -628,6 +639,12 @@ body {
     justify-content: center;
     gap: 24px;
     width: 100%;
+}
+
+.now-playing__controls .control-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .play-btn-large {
