@@ -449,6 +449,32 @@
             font-style: italic;
             padding: 2rem;
         }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .year-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .year-selector label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .year-select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background-color: white;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -479,7 +505,16 @@
 
             <section id="dashboard" class="content-section">
                  <div class="card">
-                    <h3 class="card-title">月別統計グラフ</h3>
+                    <div class="card-header">
+                        <h3 class="card-title">月別統計グラフ</h3>
+                        <div class="year-selector">
+                            <label for="yearSelect">年:</label>
+                            <select id="yearSelect" class="year-select">
+                                <option value="2024">2024年</option>
+                                <option value="2025" selected>2025年</option>
+                            </select>
+                        </div>
+                    </div>
                     <canvas id="analyticsChart" height="120"></canvas>
                 </div>
                  <div class="card">
@@ -708,70 +743,131 @@
                     tableBody.innerHTML += row;
                 });
 
-                // 2. グラフの描画
-                const monthlyData = this.episodes.reduce((acc, ep) => {
-                    const month = new Date(ep.publishedAt).toISOString().slice(0, 7); // "YYYY-MM"
-                    if (!acc[month]) {
-                        acc[month] = { plays: 0, likes: 0, comments: 0, letters: 0 };
-                    }
-                    acc[month].plays += (ep.playCount || 0);
-                    
-                    // Get likes from localStorage
-                    const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
-                    acc[month].likes += (likeCounts[ep.id] || 0);
-                    
-                    acc[month].comments += (ep.comments?.length || 0);
-                    
-                    // Add letter count for this episode
-                    const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
-                    const episodeLetters = letters.filter(letter => letter.episodeId === ep.id).length;
-                    acc[month].letters += episodeLetters;
-                    return acc;
-                }, {});
+                // 2. グラフの描画（アクション発生月ベース）
+                this.renderMonthlyChart();
+            }
 
-                const sortedMonths = Object.keys(monthlyData).sort();
+            renderMonthlyChart() {
+                const selectedYear = document.getElementById('yearSelect').value;
                 
-                const chartLabels = sortedMonths;
-                const playData = sortedMonths.map(m => monthlyData[m].plays);
-                const likeData = sortedMonths.map(m => monthlyData[m].likes);
-                const commentData = sortedMonths.map(m => monthlyData[m].comments);
-                const letterData = sortedMonths.map(m => monthlyData[m].letters);
+                // 12ヶ月のデータを初期化
+                const monthlyData = {};
+                for (let month = 1; month <= 12; month++) {
+                    const monthKey = `${selectedYear}-${month.toString().padStart(2, '0')}`;
+                    monthlyData[monthKey] = { plays: 0, likes: 0, comments: 0, letters: 0 };
+                }
+
+                // アクション発生月ベースでデータを集計
+                this.aggregateActionsByMonth(monthlyData, selectedYear);
+
+                // グラフ用のデータを準備
+                const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                const playData = [];
+                const likeData = [];
+                const commentData = [];
+                const letterData = [];
+
+                for (let month = 1; month <= 12; month++) {
+                    const monthKey = `${selectedYear}-${month.toString().padStart(2, '0')}`;
+                    playData.push(monthlyData[monthKey].plays);
+                    likeData.push(monthlyData[monthKey].likes);
+                    commentData.push(monthlyData[monthKey].comments);
+                    letterData.push(monthlyData[monthKey].letters);
+                }
+
+                // 既存のチャートを破棄
+                if (this.analyticsChart) {
+                    this.analyticsChart.destroy();
+                }
 
                 const ctx = document.getElementById('analyticsChart').getContext('2d');
-                new Chart(ctx, {
+                this.analyticsChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: chartLabels,
+                        labels: months,
                         datasets: [
                             {
                                 label: '再生数',
                                 data: playData,
-                                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                stack: 'stack1'
                             },
                             {
                                 label: 'いいね数',
                                 data: likeData,
-                                backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                                stack: 'stack1'
                             },
-                             {
+                            {
                                 label: 'コメント数',
                                 data: commentData,
-                                backgroundColor: 'rgba(236, 77, 133, 0.7)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                                stack: 'stack1'
                             },
                             {
                                 label: 'レター数',
                                 data: letterData,
-                                backgroundColor: 'rgba(255, 206, 86, 0.7)',
+                                backgroundColor: 'rgba(255, 206, 86, 0.8)',
+                                stack: 'stack1'
                             }
                         ]
                     },
                     options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `${selectedYear}年 月別統計`
+                            }
+                        },
                         scales: {
-                            y: { beginAtZero: true }
+                            x: {
+                                stacked: true
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true
+                            }
                         }
                     }
                 });
             }
+
+            aggregateActionsByMonth(monthlyData, selectedYear) {
+                // 1. 再生数（エピソード公開月に分散 - 実際のアクション日時がないため）
+                this.episodes.forEach(ep => {
+                    const publishMonth = new Date(ep.publishedAt).toISOString().slice(0, 7);
+                    if (publishMonth.startsWith(selectedYear)) {
+                        monthlyData[publishMonth].plays += (ep.playCount || 0);
+                    }
+                });
+
+                // 2. いいね数（現在月に集計 - 実際のアクション日時がないため）
+                const currentMonth = new Date().toISOString().slice(0, 7);
+                if (currentMonth.startsWith(selectedYear)) {
+                    const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
+                    Object.values(likeCounts).forEach(count => {
+                        monthlyData[currentMonth].likes += count;
+                    });
+                }
+
+                // 3. コメント数（現在月に集計）
+                if (currentMonth.startsWith(selectedYear)) {
+                    this.episodes.forEach(ep => {
+                        monthlyData[currentMonth].comments += (ep.comments?.length || 0);
+                    });
+                }
+
+                // 4. レター数（レター送信日ベース）
+                const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                letters.forEach(letter => {
+                    const letterMonth = new Date(letter.date).toISOString().slice(0, 7);
+                    if (letterMonth.startsWith(selectedYear) && monthlyData[letterMonth]) {
+                        monthlyData[letterMonth].letters += 1;
+                    }
+                });
+            }
+
             
             renderEpisodes(episodes) {
                 const listElement = document.getElementById('episodeList');
@@ -1200,6 +1296,13 @@
             // Add letter control event listeners
             document.getElementById('markAllReadBtn').addEventListener('click', () => adminApp.markAllLettersAsRead());
             document.getElementById('clearAllLettersBtn').addEventListener('click', () => adminApp.clearAllLetters());
+            
+            // Add year selector event listener
+            document.getElementById('yearSelect').addEventListener('change', () => {
+                if (adminApp) {
+                    adminApp.renderMonthlyChart();
+                }
+            });
         });
     </script>
 </body>

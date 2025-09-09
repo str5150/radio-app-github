@@ -95,6 +95,11 @@ body {
     color: #1a1a1a;
 }
 
+.search-btn:active, .clear-search-btn:active {
+    background-color: #dee2e6;
+    transform: scale(0.95);
+}
+
 .clear-search-btn {
     right: 40px;
 }
@@ -351,6 +356,25 @@ body {
 
 .episodes-grid.list-view .episode-title-small {
     -webkit-line-clamp: 2;
+}
+
+.episodes-grid.list-view .episode-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    gap: 12px;
+}
+
+.episodes-grid.list-view .episode-actions .letter-btn,
+.episodes-grid.list-view .episode-actions .bookmark-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 8px;
+}
+
+.episodes-grid.list-view .episode-actions .like-btn,
+.episodes-grid.list-view .episode-actions .comment-btn {
+    padding: 8px 12px;
+    font-size: 13px;
 }
 
 
@@ -1148,6 +1172,15 @@ body.player-open {
     .app-title {
         font-size: 24px;
         letter-spacing: 1.5px;
+    }
+    
+    .header-center {
+        max-width: 300px;
+        margin: 0 16px;
+    }
+    
+    .search-input {
+        font-size: 16px; /* Prevent zoom on iOS */
     }
     
     .main-content {

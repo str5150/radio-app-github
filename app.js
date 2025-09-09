@@ -182,7 +182,13 @@ class RadioApp {
         
         if (this.elements.searchBtn) {
             this.elements.searchBtn.addEventListener('click', () => {
-                this.handleSearch(this.elements.searchInput.value);
+                // If search input is empty, focus on it for user input
+                if (!this.elements.searchInput.value.trim()) {
+                    this.elements.searchInput.focus();
+                } else {
+                    // If there's text, perform search
+                    this.handleSearch(this.elements.searchInput.value);
+                }
             });
         }
         
