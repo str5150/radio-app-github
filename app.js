@@ -169,13 +169,21 @@ class RadioApp {
             this.dismissMiniPlayer();
         });
 
-        this.elements.audioPlayer.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
-        this.elements.audioPlayer.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
-        this.elements.audioPlayer.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        const touchableArea = this.elements.miniPlayerTouchable;
+        touchableArea.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
+        touchableArea.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: true });
+        touchableArea.addEventListener('touchend', (e) => this.handleTouchEnd(e));
 
 
         // Now Playing Screen events
-        this.elements.miniPlayerTouchable.addEventListener('click', () => this.openPlayerScreen());
+        touchableArea.addEventListener('click', () => {
+             // If it was a swipe, don't open the player
+            if (this.isSwiping) {
+                this.isSwiping = false; // Reset swipe flag
+                return;
+            }
+            this.openPlayerScreen();
+        });
         this.elements.closePlayerBtn.addEventListener('click', () => this.closePlayerScreen());
         this.elements.nowPlayingPlayPauseBtn.addEventListener('click', () => this.togglePlayPause());
         if (this.elements.nowPlayingProgressBar) {
@@ -223,12 +231,17 @@ class RadioApp {
     }
 
     handleTouchMove(e) {
+        if (!this.touchStartX) return;
         this.touchMoveX = e.touches[0].clientX;
         const diffX = this.touchMoveX - this.touchStartX;
-        if (Math.abs(diffX) > 10) { // Start swiping
+        
+        // Start swiping only after a certain threshold
+        if (Math.abs(diffX) > 10) { 
             this.isSwiping = true;
         }
-        if (this.isSwiping && diffX < 0) { // Only allow left swipe
+
+        // Only allow left swipe and apply transformation
+        if (diffX < 0) { 
              this.elements.audioPlayer.style.transform = `translateX(${diffX}px)`;
         }
     }
@@ -249,7 +262,7 @@ class RadioApp {
 
         this.touchStartX = 0;
         this.touchMoveX = 0;
-        this.isSwiping = false;
+        // isSwiping is reset in the click handler to prevent race conditions
     }
 
     async fetchEpisodes() {
@@ -307,8 +320,6 @@ class RadioApp {
 
         card.addEventListener('click', (e) => {
             if (e.target.closest('.like-btn') || e.target.closest('.comment-btn')) return;
-            // Don't play if we are swiping the mini-player
-            if (this.isSwiping) return;
             this.playEpisode(index);
         });
 
