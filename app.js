@@ -118,6 +118,7 @@ class RadioApp {
             viewGridBtn: document.getElementById('viewGridBtn'),
             viewListBtn: document.getElementById('viewListBtn'),
             filterButtons: document.querySelectorAll('.filter-btn'),
+            homeBtn: document.querySelector('.app-title'),
             // Now Playing Screen elements
             nowPlayingScreen: document.getElementById('nowPlayingScreen'),
             closePlayerBtn: document.getElementById('closePlayerBtn'),
@@ -187,6 +188,14 @@ class RadioApp {
         
         if (this.elements.clearSearchBtn) {
             this.elements.clearSearchBtn.addEventListener('click', () => this.clearSearch());
+        }
+
+        // Home button functionality
+        if (this.elements.homeBtn) {
+            this.elements.homeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.goHome();
+            });
         }
 
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -365,13 +374,11 @@ class RadioApp {
                         <svg class="comment-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                         <span class="comment-count">${episode.comments?.length || 0}</span>
                     </button>
-                    <button class="letter-btn" data-episode-id="${episode.id}">
+                    <button class="letter-btn" data-episode-id="${episode.id}" title="レター送信">
                         <svg class="letter-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 9-18 9v-7l15-2-15-2V3z"></path></svg>
-                        <span class="letter-text">レター</span>
                     </button>
-                    <button class="bookmark-btn" data-episode-id="${episode.id}">
+                    <button class="bookmark-btn" data-episode-id="${episode.id}" title="ブックマーク">
                         <svg class="bookmark-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>
-                        <span class="bookmark-text">保存</span>
                     </button>
                 </div>
             </div>`;
@@ -611,10 +618,8 @@ class RadioApp {
         const bookmarkBtn = document.querySelector(`.bookmark-btn[data-episode-id="${episodeId}"]`);
         if (bookmarkBtn) {
             bookmarkBtn.classList.toggle('bookmarked', isBookmarked);
-            const bookmarkText = bookmarkBtn.querySelector('.bookmark-text');
-            if (bookmarkText) {
-                bookmarkText.textContent = isBookmarked ? '保存済' : '保存';
-            }
+            // Update title attribute for tooltip
+            bookmarkBtn.title = isBookmarked ? 'ブックマーク済み' : 'ブックマーク';
         }
     }
 
@@ -746,6 +751,14 @@ class RadioApp {
         }
         
         // Show all episodes
+        this.showAllEpisodes();
+    }
+
+    goHome() {
+        // Clear search
+        this.clearSearch();
+        
+        // Make sure we're showing all episodes (not bookmarks)
         this.showAllEpisodes();
     }
     

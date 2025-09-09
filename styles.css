@@ -179,14 +179,12 @@ body {
     border: none;
     color: #666666;
     cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 8px;
+    border-radius: 6px;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    justify-content: center;
 }
 
 .bookmark-list-btn:hover {
@@ -444,7 +442,7 @@ body {
     border-top: 1px solid #e5e5e5;
 }
 
-.like-btn, .comment-btn, .letter-btn, .bookmark-btn {
+.like-btn, .comment-btn {
     background: #f8f9fa;
     border: none;
     color: #495057;
@@ -457,6 +455,21 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.letter-btn, .bookmark-btn {
+    background: #f8f9fa;
+    border: none;
+    color: #495057;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
 }
 
 .like-btn:hover, .comment-btn:hover, .letter-btn:hover, .bookmark-btn:hover {
