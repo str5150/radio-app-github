@@ -247,24 +247,30 @@ body {
 /* List View Styles */
 .episodes-grid.list-view {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
 }
 
 .episodes-grid.list-view .episode-card {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
+    padding: 16px;
 }
 
 .episodes-grid.list-view .episode-cover-small {
-    width: 120px;
-    height: 120px;
+    width: 80px;
+    height: 80px;
     flex-shrink: 0;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .episodes-grid.list-view .episode-content {
     flex-grow: 1;
+    padding: 0;
+}
+
+.episodes-grid.list-view .episode-title-small {
+    -webkit-line-clamp: 2;
 }
 
 
