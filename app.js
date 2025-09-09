@@ -102,6 +102,7 @@ class RadioApp {
             cancelComment: document.getElementById('cancelComment'),
             viewGridBtn: document.getElementById('viewGridBtn'),
             viewListBtn: document.getElementById('viewListBtn'),
+            filterButtons: document.querySelectorAll('.filter-btn'),
         };
         
         this.currentCommentEpisode = null;
@@ -130,23 +131,32 @@ class RadioApp {
 
         this.elements.viewGridBtn.addEventListener('click', () => this.setView('grid'));
         this.elements.viewListBtn.addEventListener('click', () => this.setView('list'));
+        this.elements.filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => this.filterAndSortEpisodes(e.target.dataset.filter));
+        });
     }
 
     async fetchEpisodes() {
         try {
             const response = await fetch('episodes.json');
+            if (!response.ok) {
+                throw new Error('Failed to load episodes.json');
+            }
             const data = await response.json();
             this.episodes = data.episodes;
-            this.renderEpisodes();
+            this.filterAndSortEpisodes('all'); // 初期表示
         } catch (error) {
             console.error('Error fetching episodes:', error);
         }
     }
 
-    renderEpisodes() {
+    renderEpisodes(episodesToRender) {
         this.elements.episodesList.innerHTML = '';
-        this.episodes.forEach((episode, index) => {
-            const card = this.createEpisodeCard(episode, index);
+        const episodes = episodesToRender || this.episodes;
+        episodes.forEach((episode, index) => {
+            // 注意：元の配列でのインデックスを見つける必要があるため、findindexを使用
+            const originalIndex = this.episodes.findIndex(ep => ep.id === episode.id);
+            const card = this.createEpisodeCard(episode, originalIndex);
             this.elements.episodesList.appendChild(card);
         });
         this.restoreLikeStates();
@@ -398,6 +408,31 @@ class RadioApp {
     setView(view) {
         localStorage.setItem('preferredView', view);
         this.applyPreferredView();
+    }
+
+    filterAndSortEpisodes(filter) {
+        // ボタンのアクティブ状態を更新
+        this.elements.filterButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === filter);
+        });
+
+        let sortedEpisodes = [...this.episodes];
+
+        switch (filter) {
+            case 'recent':
+                sortedEpisodes.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+                break;
+            case 'popular':
+                sortedEpisodes.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+                break;
+            case 'all':
+            default:
+                 // デフォルト（jsonの並び順）に戻すため、元の配列をソート
+                sortedEpisodes.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+                break;
+        }
+
+        this.renderEpisodes(sortedEpisodes);
     }
 
     applyPreferredView() {
