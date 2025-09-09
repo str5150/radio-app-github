@@ -210,10 +210,14 @@ class RadioApp {
     openPlayerScreen() {
         if (this.currentEpisodeIndex === -1) return; // Don't open if nothing is playing
         this.elements.nowPlayingScreen.classList.add('visible');
+        // Prevent body scroll
+        document.body.classList.add('player-open');
     }
 
     closePlayerScreen() {
         this.elements.nowPlayingScreen.classList.remove('visible');
+        // Restore body scroll
+        document.body.classList.remove('player-open');
     }
 
     dismissMiniPlayer() {
