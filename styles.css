@@ -198,11 +198,11 @@ body {
 }
 
 .view-btn {
-    background: none;
+    background: #f8f9fa;
     border: none;
-    color: #666666;
-    padding: 6px;
-    border-radius: 4px;
+    color: #495057;
+    padding: 10px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -210,31 +210,39 @@ body {
 }
 
 .view-btn:hover {
-    background-color: #f5f5f5;
+    background: #e9ecef;
+    transform: translateY(-1px);
 }
 
 .view-btn.active {
-    background-color: #1a1a1a;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .filter-btn {
-    background: none;
-    border: 1px solid #e5e5e5;
-    color: #666666;
-    padding: 8px 16px;
-    border-radius: 6px;
+    background: #f8f9fa;
+    border: none;
+    color: #495057;
+    padding: 12px 24px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.2s ease;
 }
 
-.filter-btn:hover,
+.filter-btn:hover {
+    background: #e9ecef;
+    transform: translateY(-1px);
+}
+
 .filter-btn.active {
-    background-color: #1a1a1a;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #ffffff;
-    border-color: #1a1a1a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 /* エピソードグリッド */
@@ -364,11 +372,11 @@ body {
 }
 
 .like-btn, .comment-btn {
-    background: none;
-    border: 1px solid #e5e5e5;
-    color: #666666;
-    padding: 8px 12px;
-    border-radius: 6px;
+    background: #f8f9fa;
+    border: none;
+    color: #495057;
+    padding: 10px 16px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
@@ -379,18 +387,20 @@ body {
 }
 
 .like-btn:hover, .comment-btn:hover {
-    background-color: #f5f5f5;
-    border-color: #1a1a1a;
+    background: #e9ecef;
+    transform: translateY(-1px);
 }
 
 .like-btn.liked {
-    color: #1a1a1a;
-    border-color: #1a1a1a;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .like-btn.liked .like-icon {
-    fill: #1a1a1a;
-    stroke: #1a1a1a;
+    fill: #ffffff;
+    stroke: #ffffff;
 }
 
 .like-icon, .comment-icon {
@@ -666,19 +676,27 @@ body {
 }
 
 .speed-controls-large .speed-btn {
-    padding: 8px 16px;
-    border-radius: 20px;
-    background-color: #f0f0f0;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background: #f8f9fa;
     border: none;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: background-color 0.2s;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.speed-controls-large .speed-btn:hover {
+    background: #e9ecef;
+    transform: translateY(-1px);
 }
 
 .speed-controls-large .speed-btn.active {
-    background-color: #1a1a1a;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 /* モーダル */
