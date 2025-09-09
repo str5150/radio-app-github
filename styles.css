@@ -405,157 +405,76 @@ body {
 /* 音声プレイヤー */
 .audio-player {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: #ffffff;
-    border-top: 1px solid #e5e5e5;
-    padding: 16px 24px;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    z-index: 1000;
-    backdrop-filter: blur(10px);
+    bottom: -150px; /* Start hidden */
+    left: 16px;
+    right: 16px;
+    width: auto;
     background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid #e0e0e0;
+    z-index: 1000;
+    transition: bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
 }
 
 .audio-player.visible {
-    transform: translateY(0);
+    bottom: 16px;
 }
 
-.player-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.episode-info {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    min-width: 300px;
+.player-cover-mini {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
     flex-shrink: 0;
 }
 
-.episode-cover {
-    width: 48px;
-    height: 48px;
-    object-fit: cover;
-    border-radius: 6px;
-    background-color: #f5f5f5;
+.player-info-mini {
+    flex-grow: 1;
+    min-width: 0; /* Important for text truncation */
 }
 
-.episode-details {
-    flex: 1;
-    min-width: 0;
-}
-
-.episode-title {
+.player-title-mini {
     font-size: 15px;
     font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.episode-description {
+.player-description-mini {
     font-size: 13px;
-    color: #666666;
+    color: #666;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* プレイヤーコントロール */
-.player-controls {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex: 1;
+.player-controls-mini {
+    flex-shrink: 0;
 }
 
-.control-btn {
-    background: none;
-    border: none;
-    color: #1a1a1a;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 6px;
-    transition: background-color 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-}
-
-.control-btn:hover {
-    background-color: #f5f5f5;
-}
-
-.play-btn {
-    background-color: #1a1a1a;
-    color: #ffffff;
+.player-controls-mini .control-btn {
     width: 40px;
     height: 40px;
 }
 
-.play-btn:hover {
-    background-color: #333333;
-}
-
-.play-btn.playing .play-icon {
+/* Cleanup old player styles if they exist */
+.player-progress, .player-content, .player-controls, .player-time, .speed-controls {
     display: none;
 }
 
-.play-btn.playing .pause-icon {
-    display: block;
-}
 
-.play-btn .pause-icon {
-    display: none;
-}
-
-/* プログレスバー */
-.progress-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.progress-bar {
-    height: 4px;
-    background-color: #e5e5e5;
-    border-radius: 2px;
-    cursor: pointer;
-    position: relative;
-}
-
-.progress-fill {
-    height: 100%;
-    background-color: #1a1a1a;
-    border-radius: 2px;
-    width: 0%;
-    transition: width 0.1s ease;
-}
-
-.time-display {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: #999999;
-    font-weight: 500;
-}
-
-/* 再生速度コントロール */
-.speed-controls {
+.player-right .speed-controls {
     display: flex;
     gap: 4px;
-    align-items: center;
 }
 
 .speed-btn {

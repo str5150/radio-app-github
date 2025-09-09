@@ -85,14 +85,14 @@ class RadioApp {
             playerTitle: document.getElementById('playerTitle'),
             playerDescription: document.getElementById('playerDescription'),
             playPauseBtn: document.getElementById('playPauseBtn'),
-            progressBar: document.getElementById('progressBar'),
-            currentTime: document.getElementById('currentTime'),
-            duration: document.getElementById('duration'),
+            progressBar: document.getElementById('progressBar'), // Will be null, handled below
+            currentTime: document.getElementById('currentTime'), // Will be null, handled below
+            duration: document.getElementById('duration'),       // Will be null, handled below
             volumeSlider: document.getElementById('volumeSlider'),
-            speedButtons: document.querySelectorAll('.speed-btn'),
+            speedButtons: document.querySelectorAll('.speed-btn'),  // Will be null, handled below
             subscribeBtn: document.getElementById('subscribeBtn'),
-            prevBtn: document.getElementById('prevBtn'),
-            nextBtn: document.getElementById('nextBtn'),
+            prevBtn: document.getElementById('prevBtn'),           // Will be null, handled below
+            nextBtn: document.getElementById('nextBtn'),           // Will be null, handled below
             commentModal: document.getElementById('commentModal'),
             closeCommentModal: document.getElementById('closeCommentModal'),
             commentModalTitle: document.getElementById('commentModalTitle'),
@@ -126,13 +126,23 @@ class RadioApp {
 
     bindEvents() {
         this.elements.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
-        this.elements.progressBar.addEventListener('input', (e) => this.seekTo(e.target.value));
+        if (this.elements.progressBar) {
+            this.elements.progressBar.addEventListener('input', (e) => this.seekTo(e.target.value));
+        }
+        if (this.elements.nextBtn) {
+            this.elements.nextBtn.addEventListener('click', () => this.playNext());
+        }
+        if (this.elements.prevBtn) {
+            this.elements.prevBtn.addEventListener('click', () => this.playPrev());
+        }
+        if (this.elements.speedButtons) {
+            this.elements.speedButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => this.setPlaybackSpeed(parseFloat(e.target.dataset.speed)));
+            });
+        }
         this.elements.volumeSlider.addEventListener('input', (e) => this.setVolume(e.target.value));
-        this.elements.speedButtons.forEach(btn => btn.addEventListener('click', (e) => this.setPlaybackSpeed(e.target.dataset.speed)));
         this.elements.subscribeBtn.addEventListener('click', subscribeUserToPush);
-        this.elements.nextBtn.addEventListener('click', () => this.playNext());
-        this.elements.prevBtn.addEventListener('click', () => this.playPrev());
-        
+
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
         this.audio.addEventListener('loadedmetadata', () => this.updateDuration());
         this.audio.addEventListener('ended', () => this.playNext());
@@ -151,9 +161,15 @@ class RadioApp {
         document.getElementById('audioPlayer').addEventListener('click', () => this.openPlayerScreen());
         this.elements.closePlayerBtn.addEventListener('click', () => this.closePlayerScreen());
         this.elements.nowPlayingPlayPauseBtn.addEventListener('click', () => this.togglePlayPause());
-        this.elements.nowPlayingProgressBar.addEventListener('input', (e) => this.seekTo(e.target.value));
-        this.elements.nowPlayingNextBtn.addEventListener('click', () => this.playNext());
-        this.elements.nowPlayingPrevBtn.addEventListener('click', () => this.playPrev());
+        if (this.elements.nowPlayingProgressBar) {
+            this.elements.nowPlayingProgressBar.addEventListener('input', (e) => this.seekTo(e.target.value));
+        }
+        if (this.elements.nowPlayingNextBtn) {
+            this.elements.nowPlayingNextBtn.addEventListener('click', () => this.playNext());
+        }
+        if (this.elements.nowPlayingPrevBtn) {
+            this.elements.nowPlayingPrevBtn.addEventListener('click', () => this.playPrev());
+        }
     }
 
     openPlayerScreen() {
@@ -311,9 +327,9 @@ class RadioApp {
         const progress = (this.audio.currentTime / this.audio.duration) * 100;
         const formattedTime = this.formatTime(this.audio.currentTime);
 
-        // Mini Player
-        this.elements.progressBar.value = isNaN(progress) ? 0 : progress;
-        this.elements.currentTime.textContent = formattedTime;
+        // Mini Player (Now optional)
+        if(this.elements.progressBar) this.elements.progressBar.value = isNaN(progress) ? 0 : progress;
+        if(this.elements.currentTime) this.elements.currentTime.textContent = formattedTime;
 
         // Full Screen Player
         this.elements.nowPlayingProgressBar.value = isNaN(progress) ? 0 : progress;
@@ -322,8 +338,9 @@ class RadioApp {
 
     updateDuration() {
         const formattedDuration = this.formatTime(this.audio.duration);
-        // Mini Player
-        this.elements.duration.textContent = formattedDuration;
+        // Mini Player (Now optional)
+        if(this.elements.duration) this.elements.duration.textContent = formattedDuration;
+        
         // Full Screen Player
         this.elements.nowPlayingDuration.textContent = formattedDuration;
     }
