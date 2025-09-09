@@ -633,23 +633,27 @@ class RadioApp {
         }
         
         const episode = this.currentLetterEpisode;
-        const emailSubject = `【レター】${subject} - ${episode.title}`;
-        const emailBody = `配信者様へのレターが届きました。\n\n` +
-                         `エピソード: ${episode.title}\n` +
-                         `送信者: ${name}\n` +
-                         `件名: ${subject}\n\n` +
-                         `メッセージ:\n${text}\n\n` +
-                         `---\n` +
-                         `Radio App より`;
+        const newLetter = {
+            id: String(Date.now()),
+            episodeId: episode.id,
+            episodeTitle: episode.title,
+            senderName: name,
+            subject: subject,
+            message: text,
+            date: new Date().toISOString(),
+            isRead: false
+        };
         
-        // メールクライアントを開く
-        window.location.href = `mailto:satoru.slash5150@gmail.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        // ローカルストレージにレターを保存
+        const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+        letters.push(newLetter);
+        localStorage.setItem('radioAppLetters', JSON.stringify(letters));
         
         // フォームをクリアしてモーダルを閉じる
         this.hideLetterModal();
         
         // 送信完了メッセージ
-        alert('レターを送信しました。ありがとうございます！');
+        alert('レターを送信しました。管理者が確認いたします。ありがとうございます！');
     }
 
     setView(view) {

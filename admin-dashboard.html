@@ -98,6 +98,16 @@
             background-color: rgba(255, 255, 255, 0.2);
         }
 
+        .notification-badge {
+            background-color: #ff4757;
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+
 
         .main-content {
             flex: 1;
@@ -379,6 +389,66 @@
             min-height: 100px;
             resize: vertical;
         }
+
+        .letters-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .letter-item {
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .letter-item.unread {
+            border-left: 4px solid #ff4757;
+            background: #fff9f9;
+        }
+
+        .letter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .letter-meta {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .letter-subject {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .letter-message {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .letter-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .no-letters {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 2rem;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -391,6 +461,7 @@
                 <a href="#" class="active" data-section="dashboard">ダッシュボード</a>
                 <a href="#" data-section="episodes">エピソード管理</a>
                 <a href="#" data-section="upload">音声アップロード</a>
+                <a href="#" data-section="letters">レター確認 <span id="letterNotification" class="notification-badge" style="display: none;">0</span></a>
                 <a href="#" data-section="settings">設定</a>
                 <hr style="margin: 1rem 0; border: none; border-top: 1px solid #444;">
                 <a href="https://str5150.github.io/radio-app-github/" class="listener-link">🎧 リスナー画面に戻る</a>
@@ -422,6 +493,7 @@
                                     <th>再生数</th>
                                     <th>いいね数</th>
                                     <th>コメント数</th>
+                                    <th>レター数</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -472,6 +544,19 @@
                         <button type="submit" class="btn btn-primary">アップロード</button>
                         <div id="uploadProgress" style="margin-top: 1rem;"></div>
                     </form>
+                </div>
+            </section>
+
+            <section id="letters" class="content-section" style="display: none;">
+                <div class="card">
+                    <h3 class="card-title">レター確認</h3>
+                    <div class="letters-controls">
+                        <button class="btn btn-secondary" id="markAllReadBtn">すべて既読にする</button>
+                        <button class="btn btn-danger" id="clearAllLettersBtn">すべて削除</button>
+                    </div>
+                    <div id="lettersContainer">
+                        <p class="no-letters">レターはまだありません。</p>
+                    </div>
                 </div>
             </section>
 
@@ -552,6 +637,8 @@
                 await this.fetchAndRenderEpisodes();
                 await this.loadAndRenderAudioFiles();
                 this.renderAnalytics();
+                this.loadLetters();
+                this.updateLetterNotification();
             }
 
             setupNavigation() {
@@ -605,6 +692,8 @@
                 const tableBody = document.querySelector('#episodesTable tbody');
                 tableBody.innerHTML = '';
                 this.episodes.forEach(ep => {
+                    const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                    const episodeLetters = letters.filter(letter => letter.episodeId === ep.id).length;
                     const row = `
                         <tr>
                             <td>${ep.title}</td>
@@ -612,6 +701,7 @@
                             <td>${ep.playCount || 0}</td>
                             <td>${ep.likes || 0}</td>
                             <td>${ep.comments?.length || 0}</td>
+                            <td>${episodeLetters}</td>
                         </tr>`;
                     tableBody.innerHTML += row;
                 });
@@ -620,11 +710,16 @@
                 const monthlyData = this.episodes.reduce((acc, ep) => {
                     const month = new Date(ep.publishedAt).toISOString().slice(0, 7); // "YYYY-MM"
                     if (!acc[month]) {
-                        acc[month] = { plays: 0, likes: 0, comments: 0 };
+                        acc[month] = { plays: 0, likes: 0, comments: 0, letters: 0 };
                     }
                     acc[month].plays += (ep.playCount || 0);
                     acc[month].likes += (ep.likes || 0);
                     acc[month].comments += (ep.comments?.length || 0);
+                    
+                    // Add letter count for this episode
+                    const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                    const episodeLetters = letters.filter(letter => letter.episodeId === ep.id).length;
+                    acc[month].letters += episodeLetters;
                     return acc;
                 }, {});
 
@@ -634,6 +729,7 @@
                 const playData = sortedMonths.map(m => monthlyData[m].plays);
                 const likeData = sortedMonths.map(m => monthlyData[m].likes);
                 const commentData = sortedMonths.map(m => monthlyData[m].comments);
+                const letterData = sortedMonths.map(m => monthlyData[m].letters);
 
                 const ctx = document.getElementById('analyticsChart').getContext('2d');
                 new Chart(ctx, {
@@ -655,6 +751,11 @@
                                 label: 'コメント数',
                                 data: commentData,
                                 backgroundColor: 'rgba(236, 77, 133, 0.7)',
+                            },
+                            {
+                                label: 'レター数',
+                                data: letterData,
+                                backgroundColor: 'rgba(255, 206, 86, 0.7)',
                             }
                         ]
                     },
@@ -994,12 +1095,105 @@
                 sessionStorage.removeItem('adminUsername');
                 window.location.href = 'admin-login.html';
             }
+            loadLetters() {
+                const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                this.renderLetters(letters);
+            }
+
+            renderLetters(letters) {
+                const container = document.getElementById('lettersContainer');
+                
+                if (letters.length === 0) {
+                    container.innerHTML = '<p class="no-letters">レターはまだありません。</p>';
+                    return;
+                }
+                
+                // Sort letters by date (newest first)
+                letters.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                container.innerHTML = letters.map(letter => `
+                    <div class="letter-item ${letter.isRead ? '' : 'unread'}" data-letter-id="${letter.id}">
+                        <div class="letter-header">
+                            <div>
+                                <div class="letter-subject">${letter.subject}</div>
+                                <div class="letter-meta">
+                                    送信者: ${letter.senderName} | エピソード: ${letter.episodeTitle} | 
+                                    ${new Date(letter.date).toLocaleDateString('ja-JP')} ${new Date(letter.date).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}
+                                </div>
+                            </div>
+                            ${!letter.isRead ? '<span style="color: #ff4757; font-weight: bold;">未読</span>' : ''}
+                        </div>
+                        <div class="letter-message">${letter.message}</div>
+                        <div class="letter-actions">
+                            ${!letter.isRead ? `<button class="btn btn-primary btn-sm" onclick="adminApp.markLetterAsRead('${letter.id}')">既読にする</button>` : ''}
+                            <button class="btn btn-danger btn-sm" onclick="adminApp.deleteLetter('${letter.id}')">削除</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateLetterNotification() {
+                const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                const unreadCount = letters.filter(letter => !letter.isRead).length;
+                const badge = document.getElementById('letterNotification');
+                
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            markLetterAsRead(letterId) {
+                const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                const letter = letters.find(l => l.id === letterId);
+                if (letter) {
+                    letter.isRead = true;
+                    localStorage.setItem('radioAppLetters', JSON.stringify(letters));
+                    this.loadLetters();
+                    this.updateLetterNotification();
+                }
+            }
+
+            deleteLetter(letterId) {
+                if (confirm('このレターを削除しますか？')) {
+                    const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                    const filteredLetters = letters.filter(l => l.id !== letterId);
+                    localStorage.setItem('radioAppLetters', JSON.stringify(filteredLetters));
+                    this.loadLetters();
+                    this.updateLetterNotification();
+                    this.renderAnalytics(); // Update analytics
+                }
+            }
+
+            markAllLettersAsRead() {
+                const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                letters.forEach(letter => letter.isRead = true);
+                localStorage.setItem('radioAppLetters', JSON.stringify(letters));
+                this.loadLetters();
+                this.updateLetterNotification();
+            }
+
+            clearAllLetters() {
+                if (confirm('すべてのレターを削除しますか？この操作は取り消せません。')) {
+                    localStorage.removeItem('radioAppLetters');
+                    this.loadLetters();
+                    this.updateLetterNotification();
+                    this.renderAnalytics(); // Update analytics
+                }
+            }
         }
 
+        // Global reference for onclick handlers
+        let adminApp;
+
         document.addEventListener('DOMContentLoaded', () => {
-            const app = new AdminDashboard();
-            // イベントリスナーをここで登録
-            // document.getElementById('newEpisodeForm').addEventListener('submit', (e) => app.handleCreateEpisode(e)); // This is now handled by bindEvents
+            adminApp = new AdminDashboard();
+            
+            // Add letter control event listeners
+            document.getElementById('markAllReadBtn').addEventListener('click', () => adminApp.markAllLettersAsRead());
+            document.getElementById('clearAllLettersBtn').addEventListener('click', () => adminApp.clearAllLetters());
         });
     </script>
 </body>

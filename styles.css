@@ -757,6 +757,14 @@ body.player-open {
     overflow: hidden;
 }
 
+.letter-modal-content {
+    max-width: 600px;
+    width: 95%;
+    text-align: left;
+    padding: 0;
+    overflow: hidden;
+}
+
 .comment-header {
     display: flex;
     justify-content: space-between;
@@ -797,6 +805,19 @@ body.player-open {
     padding: 0 24px 24px 24px;
 }
 
+.letter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px 16px 32px;
+    border-bottom: 1px solid #e5e5e5;
+    background-color: #f8f9fa;
+}
+
+.letter-section {
+    padding: 0 24px 24px 24px;
+}
+
 .comment-form {
     margin-bottom: 24px;
 }
@@ -819,6 +840,49 @@ body.player-open {
 }
 
 .comment-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.letter-form {
+    margin-bottom: 24px;
+}
+
+.letter-form .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s ease;
+}
+
+.letter-form .form-input:focus {
+    outline: none;
+    border-color: #1a1a1a;
+}
+
+.letter-form textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 120px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s ease;
+}
+
+.letter-form textarea:focus {
+    outline: none;
+    border-color: #1a1a1a;
+}
+
+.letter-form-actions {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
