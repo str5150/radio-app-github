@@ -11,7 +11,7 @@
       "tags": [],
       "likes": 0,
       "comments": [],
-      "playCount": 0
+      "playCount": 1
     },
     {
       "id": "episode-001",
@@ -37,7 +37,10 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "25:10",
       "publishedAt": "2024-01-22T10:00:00Z",
-      "tags": ["technology", "deep-dive"],
+      "tags": [
+        "technology",
+        "deep-dive"
+      ],
       "likes": 0,
       "comments": [],
       "playCount": 0
@@ -50,7 +53,10 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "35:45",
       "publishedAt": "2024-01-29T10:00:00Z",
-      "tags": ["creative", "future"],
+      "tags": [
+        "creative",
+        "future"
+      ],
       "likes": 0,
       "comments": [],
       "playCount": 0
