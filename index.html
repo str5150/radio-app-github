@@ -96,6 +96,7 @@
             </div>
             <div class="comment-section">
                 <div class="comment-form">
+                    <input type="text" id="commentName" placeholder="お名前（空欄の場合は匿名になります）" class="form-input">
                     <textarea id="commentText" placeholder="コメントを入力してください..." rows="4"></textarea>
                     <div class="comment-form-actions">
                         <button class="btn btn-secondary" id="cancelComment">キャンセル</button>
@@ -104,6 +105,27 @@
                 </div>
                 <div class="comments-list" id="commentsList">
                     <!-- Comments will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Letter Modal -->
+    <div class="modal" id="letterModal">
+        <div class="modal-content letter-modal-content">
+            <div class="letter-header">
+                <h3 id="letterModalTitle">レター送信</h3>
+                <button class="close-btn" id="closeLetterModal">&times;</button>
+            </div>
+            <div class="letter-section">
+                <div class="letter-form">
+                    <input type="text" id="letterName" placeholder="お名前" class="form-input" required>
+                    <input type="text" id="letterSubject" placeholder="件名" class="form-input" required>
+                    <textarea id="letterText" placeholder="配信者へのメッセージやリクエストをお書きください..." rows="6" required></textarea>
+                    <div class="letter-form-actions">
+                        <button class="btn btn-secondary" id="cancelLetter">キャンセル</button>
+                        <button class="btn btn-primary" id="sendLetter">送信</button>
+                    </div>
                 </div>
             </div>
         </div>

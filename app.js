@@ -98,9 +98,19 @@ class RadioApp {
             closeCommentModal: document.getElementById('closeCommentModal'),
             commentModalTitle: document.getElementById('commentModalTitle'),
             commentsList: document.getElementById('commentsList'),
+            commentName: document.getElementById('commentName'),
             commentText: document.getElementById('commentText'),
             sendComment: document.getElementById('sendComment'),
             cancelComment: document.getElementById('cancelComment'),
+            // Letter modal elements
+            letterModal: document.getElementById('letterModal'),
+            closeLetterModal: document.getElementById('closeLetterModal'),
+            letterModalTitle: document.getElementById('letterModalTitle'),
+            letterName: document.getElementById('letterName'),
+            letterSubject: document.getElementById('letterSubject'),
+            letterText: document.getElementById('letterText'),
+            sendLetter: document.getElementById('sendLetter'),
+            cancelLetter: document.getElementById('cancelLetter'),
             viewGridBtn: document.getElementById('viewGridBtn'),
             viewListBtn: document.getElementById('viewListBtn'),
             filterButtons: document.querySelectorAll('.filter-btn'),
@@ -122,6 +132,7 @@ class RadioApp {
         };
         
         this.currentCommentEpisode = null;
+        this.currentLetterEpisode = null;
         this.touchStartX = 0;
         this.touchMoveX = 0;
         this.isSwiping = false;
@@ -157,6 +168,11 @@ class RadioApp {
         this.elements.closeCommentModal.addEventListener('click', () => this.hideCommentModal());
         this.elements.sendComment.addEventListener('click', () => this.sendComment());
         this.elements.cancelComment.addEventListener('click', () => this.hideCommentModal());
+
+        // Letter modal events
+        this.elements.closeLetterModal.addEventListener('click', () => this.hideLetterModal());
+        this.elements.sendLetter.addEventListener('click', () => this.sendLetter());
+        this.elements.cancelLetter.addEventListener('click', () => this.hideLetterModal());
 
         this.elements.viewGridBtn.addEventListener('click', () => this.setView('grid'));
         this.elements.viewListBtn.addEventListener('click', () => this.setView('list'));
@@ -320,11 +336,15 @@ class RadioApp {
                         <svg class="comment-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                         <span class="comment-count">${episode.comments?.length || 0}</span>
                     </button>
+                    <button class="letter-btn" data-episode-id="${episode.id}">
+                        <svg class="letter-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 9-18 9v-7l15-2-15-2V3z"></path></svg>
+                        <span class="letter-text">レター</span>
+                    </button>
                 </div>
             </div>`;
 
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.like-btn') || e.target.closest('.comment-btn')) return;
+            if (e.target.closest('.like-btn') || e.target.closest('.comment-btn') || e.target.closest('.letter-btn')) return;
             this.playEpisode(index);
         });
 
@@ -335,6 +355,10 @@ class RadioApp {
         card.querySelector('.comment-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             this.showCommentModal(episode);
+        });
+        card.querySelector('.letter-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showLetterModal(episode);
         });
         return card;
     }
@@ -530,6 +554,23 @@ class RadioApp {
 
     hideCommentModal() {
         this.elements.commentModal.classList.remove('visible');
+        // Clear form
+        this.elements.commentName.value = '';
+        this.elements.commentText.value = '';
+    }
+
+    showLetterModal(episode) {
+        this.currentLetterEpisode = episode;
+        this.elements.letterModalTitle.textContent = `レター送信: ${episode.title}`;
+        this.elements.letterModal.classList.add('visible');
+    }
+
+    hideLetterModal() {
+        this.elements.letterModal.classList.remove('visible');
+        // Clear form
+        this.elements.letterName.value = '';
+        this.elements.letterSubject.value = '';
+        this.elements.letterText.value = '';
     }
 
     renderComments(comments) {
@@ -547,13 +588,14 @@ class RadioApp {
     }
 
     async sendComment() {
+        const name = this.elements.commentName.value.trim();
         const text = this.elements.commentText.value.trim();
         if (!text || !this.currentCommentEpisode) return;
         
         const newComment = {
             id: String(Date.now()),
             text: text,
-            author: 'Anonymous',
+            author: name || '匿名',
             date: new Date().toISOString()
         };
         
@@ -564,10 +606,13 @@ class RadioApp {
         
         this.renderComments(this.currentCommentEpisode.comments);
         this.updateCommentCount(this.currentCommentEpisode.id, this.currentCommentEpisode.comments.length);
-        this.elements.commentText.value = '';
         
-        // メール通知
-        this.sendEmailNotification(newComment);
+        // Clear form and close modal
+        this.elements.commentName.value = '';
+        this.elements.commentText.value = '';
+        this.hideCommentModal();
+        
+        // コメント機能はメール通知なし
     }
     
     updateCommentCount(episodeId, count) {
@@ -577,11 +622,34 @@ class RadioApp {
         }
     }
     
-    sendEmailNotification(comment) {
-        const episode = this.currentCommentEpisode;
-        const subject = `New comment on ${episode.title}`;
-        const body = `A new comment has been posted on "${episode.title}":\n\n${comment.text}`;
-        window.location.href = `mailto:satoru.slash5150@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    async sendLetter() {
+        const name = this.elements.letterName.value.trim();
+        const subject = this.elements.letterSubject.value.trim();
+        const text = this.elements.letterText.value.trim();
+        
+        if (!name || !subject || !text || !this.currentLetterEpisode) {
+            alert('すべての項目を入力してください。');
+            return;
+        }
+        
+        const episode = this.currentLetterEpisode;
+        const emailSubject = `【レター】${subject} - ${episode.title}`;
+        const emailBody = `配信者様へのレターが届きました。\n\n` +
+                         `エピソード: ${episode.title}\n` +
+                         `送信者: ${name}\n` +
+                         `件名: ${subject}\n\n` +
+                         `メッセージ:\n${text}\n\n` +
+                         `---\n` +
+                         `Radio App より`;
+        
+        // メールクライアントを開く
+        window.location.href = `mailto:satoru.slash5150@gmail.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        
+        // フォームをクリアしてモーダルを閉じる
+        this.hideLetterModal();
+        
+        // 送信完了メッセージ
+        alert('レターを送信しました。ありがとうございます！');
     }
 
     setView(view) {
