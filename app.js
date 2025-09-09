@@ -81,6 +81,7 @@ class RadioApp {
         
         this.elements = {
             episodesList: document.getElementById('episodeList'),
+            audioPlayer: document.getElementById('audioPlayer'),
             playerCover: document.getElementById('playerCover'),
             playerTitle: document.getElementById('playerTitle'),
             playerDescription: document.getElementById('playerDescription'),

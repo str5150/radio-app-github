@@ -635,10 +635,15 @@ body {
 
 .now-playing__controls {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr auto 1fr;
     gap: 24px;
     width: 100%;
+    align-items: center;
 }
+
+.now-playing__controls > *:nth-child(1) { justify-self: end; }
+.now-playing__controls > *:nth-child(2) { justify-self: center; }
+.now-playing__controls > *:nth-child(3) { justify-self: start; }
 
 .now-playing__controls .control-btn {
     display: flex;
