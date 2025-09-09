@@ -46,6 +46,59 @@ body {
     height: 64px;
 }
 
+.header-center {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 32px;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 16px;
+    padding-right: 80px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #1a1a1a;
+    background-color: #ffffff;
+}
+
+.search-btn, .clear-search-btn {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #666666;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-btn:hover, .clear-search-btn:hover {
+    background-color: #e9ecef;
+    color: #1a1a1a;
+}
+
+.clear-search-btn {
+    right: 40px;
+}
+
 .header-left {
     display: flex;
     align-items: center;
@@ -117,6 +170,26 @@ body {
 }
 
 .notification-btn:hover {
+    background-color: #f5f5f5;
+    color: #1a1a1a;
+}
+
+.bookmark-list-btn {
+    background: none;
+    border: none;
+    color: #666666;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.bookmark-list-btn:hover {
     background-color: #f5f5f5;
     color: #1a1a1a;
 }
@@ -371,7 +444,7 @@ body {
     border-top: 1px solid #e5e5e5;
 }
 
-.like-btn, .comment-btn, .letter-btn {
+.like-btn, .comment-btn, .letter-btn, .bookmark-btn {
     background: #f8f9fa;
     border: none;
     color: #495057;
@@ -386,7 +459,7 @@ body {
     gap: 8px;
 }
 
-.like-btn:hover, .comment-btn:hover, .letter-btn:hover {
+.like-btn:hover, .comment-btn:hover, .letter-btn:hover, .bookmark-btn:hover {
     background: #e9ecef;
     transform: translateY(-1px);
 }
@@ -399,6 +472,18 @@ body {
 }
 
 .like-btn.liked .like-icon {
+    fill: #ffffff;
+    stroke: #ffffff;
+}
+
+.bookmark-btn.bookmarked {
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.bookmark-btn.bookmarked .bookmark-icon {
     fill: #ffffff;
     stroke: #ffffff;
 }

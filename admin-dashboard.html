@@ -693,13 +693,15 @@
                 tableBody.innerHTML = '';
                 this.episodes.forEach(ep => {
                     const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
+                    const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
                     const episodeLetters = letters.filter(letter => letter.episodeId === ep.id).length;
+                    const episodeLikes = likeCounts[ep.id] || 0;
                     const row = `
                         <tr>
                             <td>${ep.title}</td>
                             <td>${new Date(ep.publishedAt).toLocaleDateString()}</td>
                             <td>${ep.playCount || 0}</td>
-                            <td>${ep.likes || 0}</td>
+                            <td>${episodeLikes}</td>
                             <td>${ep.comments?.length || 0}</td>
                             <td>${episodeLetters}</td>
                         </tr>`;
@@ -713,7 +715,11 @@
                         acc[month] = { plays: 0, likes: 0, comments: 0, letters: 0 };
                     }
                     acc[month].plays += (ep.playCount || 0);
-                    acc[month].likes += (ep.likes || 0);
+                    
+                    // Get likes from localStorage
+                    const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
+                    acc[month].likes += (likeCounts[ep.id] || 0);
+                    
                     acc[month].comments += (ep.comments?.length || 0);
                     
                     // Add letter count for this episode

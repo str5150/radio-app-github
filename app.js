@@ -92,6 +92,10 @@ class RadioApp {
             
             speedButtons: document.querySelectorAll('.speed-btn'),  // Will be null, handled below
             subscribeBtn: document.getElementById('subscribeBtn'),
+            bookmarkListBtn: document.getElementById('bookmarkListBtn'),
+            searchInput: document.getElementById('searchInput'),
+            searchBtn: document.getElementById('searchBtn'),
+            clearSearchBtn: document.getElementById('clearSearchBtn'),
             prevBtn: document.getElementById('prevBtn'),           // Will be null, handled below
             nextBtn: document.getElementById('nextBtn'),           // Will be null, handled below
             commentModal: document.getElementById('commentModal'),
@@ -160,6 +164,30 @@ class RadioApp {
         }
         
         this.elements.subscribeBtn.addEventListener('click', subscribeUserToPush);
+        
+        if (this.elements.bookmarkListBtn) {
+            this.elements.bookmarkListBtn.addEventListener('click', () => this.showBookmarkList());
+        }
+
+        // Search functionality
+        if (this.elements.searchInput) {
+            this.elements.searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
+            this.elements.searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleSearch(e.target.value);
+                }
+            });
+        }
+        
+        if (this.elements.searchBtn) {
+            this.elements.searchBtn.addEventListener('click', () => {
+                this.handleSearch(this.elements.searchInput.value);
+            });
+        }
+        
+        if (this.elements.clearSearchBtn) {
+            this.elements.clearSearchBtn.addEventListener('click', () => this.clearSearch());
+        }
 
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
         this.audio.addEventListener('loadedmetadata', () => this.updateDuration());
@@ -310,6 +338,7 @@ class RadioApp {
             this.elements.episodesList.appendChild(card);
         });
         this.restoreLikeStates();
+        this.restoreBookmarkStates();
     }
 
     createEpisodeCard(episode, index) {
@@ -330,7 +359,7 @@ class RadioApp {
                  <div class="episode-actions">
                     <button class="like-btn" data-episode-id="${episode.id}">
                         <svg class="like-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                        <span class="like-count">${episode.likes || 0}</span>
+                        <span class="like-count">${this.getEpisodeLikeCount(episode.id)}</span>
                     </button>
                     <button class="comment-btn" data-episode-id="${episode.id}">
                         <svg class="comment-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -340,11 +369,15 @@ class RadioApp {
                         <svg class="letter-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 9-18 9v-7l15-2-15-2V3z"></path></svg>
                         <span class="letter-text">レター</span>
                     </button>
+                    <button class="bookmark-btn" data-episode-id="${episode.id}">
+                        <svg class="bookmark-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>
+                        <span class="bookmark-text">保存</span>
+                    </button>
                 </div>
             </div>`;
 
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.like-btn') || e.target.closest('.comment-btn') || e.target.closest('.letter-btn')) return;
+            if (e.target.closest('.like-btn') || e.target.closest('.comment-btn') || e.target.closest('.letter-btn') || e.target.closest('.bookmark-btn')) return;
             this.playEpisode(index);
         });
 
@@ -359,6 +392,10 @@ class RadioApp {
         card.querySelector('.letter-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             this.showLetterModal(episode);
+        });
+        card.querySelector('.bookmark-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleBookmark(episode.id);
         });
         return card;
     }
@@ -512,18 +549,27 @@ class RadioApp {
     toggleLike(episodeId) {
         const episode = this.episodes.find(ep => ep.id === episodeId);
         if (!episode) return;
+        
         const likedEpisodes = JSON.parse(localStorage.getItem('likedEpisodes') || '[]');
+        const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
+        
         const isLiked = likedEpisodes.includes(episodeId);
+        
         if (isLiked) {
-            episode.likes = Math.max(0, episode.likes - 1);
+            // Unlike
             likedEpisodes.splice(likedEpisodes.indexOf(episodeId), 1);
+            likeCounts[episodeId] = Math.max(0, (likeCounts[episodeId] || 0) - 1);
         } else {
-            episode.likes = (episode.likes || 0) + 1;
+            // Like
             likedEpisodes.push(episodeId);
+            likeCounts[episodeId] = (likeCounts[episodeId] || 0) + 1;
         }
+        
         localStorage.setItem('likedEpisodes', JSON.stringify(likedEpisodes));
+        localStorage.setItem('episodeLikeCounts', JSON.stringify(likeCounts));
+        
         this.updateLikeButton(episodeId, !isLiked);
-        this.updateLikeCount(episodeId, episode.likes);
+        this.updateLikeCount(episodeId, likeCounts[episodeId]);
     }
 
     updateLikeButton(episodeId, isLiked) {
@@ -538,6 +584,169 @@ class RadioApp {
         if (likeCount) {
             likeCount.textContent = count;
         }
+    }
+
+    getEpisodeLikeCount(episodeId) {
+        const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
+        return likeCounts[episodeId] || 0;
+    }
+
+    toggleBookmark(episodeId) {
+        const bookmarkedEpisodes = JSON.parse(localStorage.getItem('bookmarkedEpisodes') || '[]');
+        const isBookmarked = bookmarkedEpisodes.includes(episodeId);
+        
+        if (isBookmarked) {
+            // Remove bookmark
+            bookmarkedEpisodes.splice(bookmarkedEpisodes.indexOf(episodeId), 1);
+        } else {
+            // Add bookmark
+            bookmarkedEpisodes.push(episodeId);
+        }
+        
+        localStorage.setItem('bookmarkedEpisodes', JSON.stringify(bookmarkedEpisodes));
+        this.updateBookmarkButton(episodeId, !isBookmarked);
+    }
+
+    updateBookmarkButton(episodeId, isBookmarked) {
+        const bookmarkBtn = document.querySelector(`.bookmark-btn[data-episode-id="${episodeId}"]`);
+        if (bookmarkBtn) {
+            bookmarkBtn.classList.toggle('bookmarked', isBookmarked);
+            const bookmarkText = bookmarkBtn.querySelector('.bookmark-text');
+            if (bookmarkText) {
+                bookmarkText.textContent = isBookmarked ? '保存済' : '保存';
+            }
+        }
+    }
+
+    restoreBookmarkStates() {
+        const bookmarkedEpisodes = JSON.parse(localStorage.getItem('bookmarkedEpisodes') || '[]');
+        bookmarkedEpisodes.forEach(episodeId => this.updateBookmarkButton(episodeId, true));
+    }
+
+    showBookmarkList() {
+        const bookmarkedEpisodes = JSON.parse(localStorage.getItem('bookmarkedEpisodes') || '[]');
+        
+        if (bookmarkedEpisodes.length === 0) {
+            alert('ブックマークされたエピソードはありません。');
+            return;
+        }
+        
+        // Filter episodes to show only bookmarked ones
+        const bookmarkedEpisodeData = this.episodes.filter(episode => 
+            bookmarkedEpisodes.includes(episode.id)
+        );
+        
+        // Update section title
+        const sectionTitle = document.querySelector('.section-title');
+        if (sectionTitle) {
+            sectionTitle.textContent = `ブックマーク (${bookmarkedEpisodeData.length}件)`;
+        }
+        
+        // Hide filter controls
+        const filterControls = document.querySelector('.filter-controls');
+        if (filterControls) {
+            filterControls.style.display = 'none';
+        }
+        
+        // Show back to all episodes button
+        this.showBackToAllButton();
+        
+        // Render only bookmarked episodes
+        this.renderEpisodes(bookmarkedEpisodeData);
+    }
+
+    showBackToAllButton() {
+        // Check if back button already exists
+        if (document.getElementById('backToAllBtn')) return;
+        
+        const sectionTitle = document.querySelector('.section-title');
+        if (sectionTitle) {
+            const backBtn = document.createElement('button');
+            backBtn.id = 'backToAllBtn';
+            backBtn.className = 'btn btn-secondary';
+            backBtn.style.marginLeft = '16px';
+            backBtn.style.fontSize = '14px';
+            backBtn.textContent = '← すべてのエピソード';
+            backBtn.addEventListener('click', () => this.showAllEpisodes());
+            sectionTitle.appendChild(backBtn);
+        }
+    }
+
+    showAllEpisodes() {
+        // Remove back button
+        const backBtn = document.getElementById('backToAllBtn');
+        if (backBtn) {
+            backBtn.remove();
+        }
+        
+        // Restore section title
+        const sectionTitle = document.querySelector('.section-title');
+        if (sectionTitle) {
+            sectionTitle.textContent = 'すべてのエピソード';
+        }
+        
+        // Show filter controls
+        const filterControls = document.querySelector('.filter-controls');
+        if (filterControls) {
+            filterControls.style.display = 'flex';
+        }
+        
+        // Render all episodes
+        this.renderEpisodes();
+    }
+
+    handleSearch(query) {
+        const trimmedQuery = query.trim().toLowerCase();
+        
+        if (trimmedQuery === '') {
+            this.clearSearch();
+            return;
+        }
+        
+        // Show clear button
+        if (this.elements.clearSearchBtn) {
+            this.elements.clearSearchBtn.style.display = 'block';
+        }
+        
+        // Filter episodes based on title and description
+        const filteredEpisodes = this.episodes.filter(episode => {
+            const titleMatch = episode.title.toLowerCase().includes(trimmedQuery);
+            const descriptionMatch = episode.description.toLowerCase().includes(trimmedQuery);
+            return titleMatch || descriptionMatch;
+        });
+        
+        // Update section title
+        const sectionTitle = document.querySelector('.section-title');
+        if (sectionTitle) {
+            sectionTitle.textContent = `検索結果: "${query}" (${filteredEpisodes.length}件)`;
+        }
+        
+        // Hide filter controls
+        const filterControls = document.querySelector('.filter-controls');
+        if (filterControls) {
+            filterControls.style.display = 'none';
+        }
+        
+        // Show back to all episodes button
+        this.showBackToAllButton();
+        
+        // Render filtered episodes
+        this.renderEpisodes(filteredEpisodes);
+    }
+
+    clearSearch() {
+        // Clear search input
+        if (this.elements.searchInput) {
+            this.elements.searchInput.value = '';
+        }
+        
+        // Hide clear button
+        if (this.elements.clearSearchBtn) {
+            this.elements.clearSearchBtn.style.display = 'none';
+        }
+        
+        // Show all episodes
+        this.showAllEpisodes();
     }
     
     restoreLikeStates() {
