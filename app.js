@@ -170,6 +170,15 @@ class RadioApp {
         if (this.elements.nowPlayingPrevBtn) {
             this.elements.nowPlayingPrevBtn.addEventListener('click', () => this.playPrev());
         }
+
+        // Add speed controls for the full screen player
+        const speedBtns = document.querySelectorAll('.now-playing-screen .speed-btn');
+        speedBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const speed = parseFloat(e.target.dataset.speed);
+                this.setPlaybackSpeed(speed, e.target);
+            });
+        });
     }
 
     openPlayerScreen() {
@@ -351,10 +360,15 @@ class RadioApp {
         this.audio.currentTime = time;
     }
 
-    setPlaybackSpeed(speed) {
+    setPlaybackSpeed(speed, activeBtn) {
         this.audio.playbackRate = parseFloat(speed);
-        // This was trying to access elements in the old mini player
-        // It's now handled only in the full screen player
+        
+        // Update active state for buttons within the full screen player
+        const speedBtns = document.querySelectorAll('.now-playing-screen .speed-btn');
+        speedBtns.forEach(btn => btn.classList.remove('active'));
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
     }
     
     formatTime(seconds) {

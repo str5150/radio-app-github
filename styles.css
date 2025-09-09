@@ -638,6 +638,27 @@ body {
     border-radius: 50%;
 }
 
+.speed-controls-large {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.speed-controls-large .speed-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background-color: #f0f0f0;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.speed-controls-large .speed-btn.active {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
 
 /* モーダル */
 .modal {
