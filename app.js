@@ -100,12 +100,15 @@ class RadioApp {
             commentText: document.getElementById('commentText'),
             sendComment: document.getElementById('sendComment'),
             cancelComment: document.getElementById('cancelComment'),
+            viewGridBtn: document.getElementById('viewGridBtn'),
+            viewListBtn: document.getElementById('viewListBtn'),
         };
         
         this.currentCommentEpisode = null;
 
         this.bindEvents();
         this.fetchEpisodes();
+        this.applyPreferredView();
     }
 
     bindEvents() {
@@ -124,6 +127,9 @@ class RadioApp {
         this.elements.closeCommentModal.addEventListener('click', () => this.hideCommentModal());
         this.elements.sendComment.addEventListener('click', () => this.sendComment());
         this.elements.cancelComment.addEventListener('click', () => this.hideCommentModal());
+
+        this.elements.viewGridBtn.addEventListener('click', () => this.setView('grid'));
+        this.elements.viewListBtn.addEventListener('click', () => this.setView('list'));
     }
 
     async fetchEpisodes() {
@@ -381,6 +387,24 @@ class RadioApp {
         const subject = `New comment on ${episode.title}`;
         const body = `A new comment has been posted on "${episode.title}":\n\n${comment.text}`;
         window.location.href = `mailto:satoru.slash5150@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    setView(view) {
+        localStorage.setItem('preferredView', view);
+        this.applyPreferredView();
+    }
+
+    applyPreferredView() {
+        const preferredView = localStorage.getItem('preferredView') || 'grid';
+        if (preferredView === 'list') {
+            this.elements.episodesList.classList.add('list-view');
+            this.elements.viewListBtn.classList.add('active');
+            this.elements.viewGridBtn.classList.remove('active');
+        } else {
+            this.elements.episodesList.classList.remove('list-view');
+            this.elements.viewGridBtn.classList.add('active');
+            this.elements.viewListBtn.classList.remove('active');
+        }
     }
 }
 

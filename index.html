@@ -29,6 +29,7 @@
                             <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"></path>
                         </svg>
                     </button>
+                    <a href="admin-login.html" class="nav-link admin-link">管理者ログイン</a>
                 </div>
             </div>
         </header>
@@ -46,9 +47,19 @@
                 <div class="section-header">
                     <h2 class="section-title">すべてのエピソード</h2>
                     <div class="section-controls">
-                        <button class="filter-btn active" data-filter="all">すべて</button>
-                        <button class="filter-btn" data-filter="recent">最新</button>
-                        <button class="filter-btn" data-filter="popular">人気</button>
+                        <div class="filter-controls">
+                            <button class="filter-btn active" data-filter="all">すべて</button>
+                            <button class="filter-btn" data-filter="recent">最新</button>
+                            <button class="filter-btn" data-filter="popular">人気</button>
+                        </div>
+                        <div class="view-controls">
+                            <button class="view-btn active" id="viewGridBtn" title="ギャラリー表示">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            </button>
+                            <button class="view-btn" id="viewListBtn" title="リスト表示">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div id="episodeList" class="episodes-grid">

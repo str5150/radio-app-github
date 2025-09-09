@@ -2,7 +2,7 @@
 
 // GitHubリポジトリの情報
 const GITHUB_REPO_OWNER = 'str5150';
-const GITHUB_REPO_NAME = 'radio-app';
+const GITHUB_REPO_NAME = 'radio-app-github';
 const GITHUB_FILE_PATH = 'episodes.json';
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
 
@@ -54,7 +54,10 @@ async function handlePostRequest(request, env) {
   try {
     const filename = request.headers.get('X-Custom-Filename');
     if (!filename || !filename.match(/^[\w\-.]+\.mp3$/)) {
-      return new Response('Valid filename header (X-Custom-Filename) is required.', { status: 400 });
+      return new Response(JSON.stringify({ success: false, error: 'Valid filename header (X-Custom-Filename) is required.' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     const object = await env.RADIO_APP_BUCKET.put(filename, request.body, {
@@ -64,8 +67,9 @@ async function handlePostRequest(request, env) {
     });
 
     return new Response(JSON.stringify({
-      message: 'File uploaded successfully!',
-      filename: object.key,
+      success: true,
+      key: object.key,
+      size: object.size
     }), {
       headers: { 
         'Content-Type': 'application/json',
@@ -74,7 +78,11 @@ async function handlePostRequest(request, env) {
     });
 
   } catch (e) {
-    return new Response(e.message || 'An error occurred', { status: 500 });
+    console.error('R2 Upload Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message || 'An unknown error occurred during upload.' }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 }
 
@@ -100,7 +108,11 @@ async function handleGetRequest(request, env) {
       },
     });
   } catch (e) {
-    return new Response(e.message || 'An error occurred', { status: 500 });
+    console.error('R2 List Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message || 'An unknown error occurred while listing files.' }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 }
 
@@ -159,6 +171,7 @@ async function handlePutRequest(request, env) {
     }
 
     return new Response(JSON.stringify({ message: 'Episode created successfully!' }), {
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
         ...corsHeaders,
@@ -166,7 +179,11 @@ async function handlePutRequest(request, env) {
     });
 
   } catch (e) {
-    return new Response(e.message, { status: 500 });
+    console.error('GitHub PUT Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 }
 
@@ -180,7 +197,11 @@ async function handleSubscription(request, env) {
     await env.SUBSCRIPTIONS_KV.put(subscription.endpoint, JSON.stringify(subscription));
     return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json', ...corsHeaders }});
   } catch (e) {
-    return new Response(e.message, { status: 500 });
+    console.error('Subscription Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 }
 
