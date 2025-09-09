@@ -634,9 +634,8 @@ body {
 }
 
 .now-playing__controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 24px;
     width: 100%;
 }
@@ -658,7 +657,7 @@ body {
 .speed-controls-large {
     display: flex;
     gap: 16px;
-    margin-top: 16px;
+    margin-top: 24px;
 }
 
 .speed-controls-large .speed-btn {
