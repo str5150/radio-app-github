@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アイコン生成ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .icon-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .icon-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .icon-item h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .icon-item canvas {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+        .download-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .download-btn:hover {
+            background: #0056b3;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .file-input {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Radioアプリ アイコン生成ツール</h1>
+    
+    <div class="instructions">
+        <h3>使用方法:</h3>
+        <ol>
+            <li>元のピクセルアート画像ファイルを選択してください</li>
+            <li>各サイズのアイコンが表示されます</li>
+            <li>「ダウンロード」ボタンをクリックしてPNGファイルを保存</li>
+            <li>保存したファイルをiconsフォルダに配置</li>
+            <li>ファイル名は「icon-[サイズ]x[サイズ].png」にしてください</li>
+        </ol>
+    </div>
+
+    <div class="file-input">
+        <input type="file" id="imageInput" accept="image/*">
+        <p>ピクセルアートスタイルの人物画像を選択してください</p>
+    </div>
+
+    <div id="errorMessage" class="error" style="display: none;"></div>
+
+    <div class="icon-container" id="iconContainer">
+        <!-- アイコンが動的に生成されます -->
+    </div>
+
+    <script>
+        // アイコンサイズのリスト
+        const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        let originalImage = null;
+        
+        // ファイル入力の処理
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        generateAllIcons();
+                        document.getElementById('errorMessage').style.display = 'none';
+                    };
+                    img.onerror = function() {
+                        showError('画像の読み込みに失敗しました。');
+                    };
+                    img.src = event.target.result;
+                };
+                reader.onerror = function() {
+                    showError('ファイルの読み込みに失敗しました。');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // エラーメッセージの表示
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // アイコンを生成する関数
+        function generateAllIcons() {
+            if (!originalImage) {
+                showError('画像を選択してください。');
+                return;
+            }
+            
+            const container = document.getElementById('iconContainer');
+            container.innerHTML = '';
+            
+            iconSizes.forEach(size => {
+                generateIcon(size);
+            });
+        }
+        
+        function generateIcon(size) {
+            const container = document.getElementById('iconContainer');
+            const iconItem = document.createElement('div');
+            iconItem.className = 'icon-item';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // 画像をリサイズして描画
+            ctx.drawImage(originalImage, 0, 0, size, size);
+            
+            iconItem.innerHTML = `
+                <h3>${size}x${size}px</h3>
+                <canvas width="${size}" height="${size}"></canvas>
+                <br>
+                <button class="download-btn" onclick="downloadIcon(${size})">ダウンロード</button>
+            `;
+            
+            // Canvasを正しい位置に配置
+            const canvasElement = iconItem.querySelector('canvas');
+            canvasElement.getContext('2d').drawImage(originalImage, 0, 0, size, size);
+            
+            container.appendChild(iconItem);
+        }
+        
+        // ダウンロード関数
+        function downloadIcon(size) {
+            if (!originalImage) {
+                showError('画像を選択してください。');
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.drawImage(originalImage, 0, 0, size, size);
+            
+            canvas.toBlob(function(blob) {
+                const link = document.createElement('a');
+                link.download = `icon-${size}x${size}.png`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+    </script>
+</body>
+</html>

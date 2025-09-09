@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio App - 管理者ダッシュボード</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-color: #1a1a1a;
+            --muted-text-color: #666;
+            --border-color: #e5e5e5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        
+        .sidebar-nav a.active, .sidebar-nav a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+        
+        .logout-btn:hover {
+             background-color: rgba(255, 255, 255, 0.1);
+        }
+
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .main-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #5a6fd8;
+        }
+        
+        .episode-list {
+            list-style: none;
+        }
+        
+        .episode-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .episode-item:last-child {
+            border-bottom: none;
+        }
+        
+        .episode-title {
+            font-weight: 500;
+        }
+
+        .episode-actions .btn {
+            margin-left: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <h1 class="sidebar-header">Radio App</h1>
+            <nav class="sidebar-nav">
+                <a href="#" class="active" data-section="dashboard">ダッシュボード</a>
+                <a href="#" data-section="episodes">エピソード管理</a>
+                <a href="#" data-section="upload">音声アップロード</a>
+                <a href="#" data-section="settings">設定</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p id="welcomeMessage" style="text-align: center; margin-bottom: 1rem;"></p>
+                <button class="logout-btn" id="logoutBtn">ログアウト</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h2 class="main-title" id="mainTitle">ダッシュボード</h2>
+            </header>
+
+            <section id="dashboard" class="content-section">
+                 <div class="card">
+                    <h3 class="card-title">統計</h3>
+                     <p>ここに統計情報を表示します（総再生回数、エピソード数など）。</p>
+                </div>
+            </section>
+            
+            <section id="episodes" class="content-section" style="display: none;">
+                <div class="card">
+                    <h3 class="card-title">エピソード一覧</h3>
+                    <ul class="episode-list" id="episodeList">
+                        <!-- エピソードはJSで動的に挿入されます -->
+                    </ul>
+                </div>
+                 <div class="card">
+                    <h3 class="card-title">新規エピソード作成</h3>
+                    <form id="newEpisodeForm">
+                        <div class="form-group">
+                            <label for="episodeTitle" class="form-label">タイトル</label>
+                            <input type="text" id="episodeTitle" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="episodeDescription" class="form-label">説明</label>
+                            <textarea id="episodeDescription" class="form-textarea" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="episodeAudio" class="form-label">音声ファイル</label>
+                             <select id="episodeAudio" class="form-input" required>
+                                <option value="">アップロード済みのファイルを選択</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">エピソードを作成</button>
+                    </form>
+                </div>
+            </section>
+            
+            <section id="upload" class="content-section" style="display: none;">
+                <div class="card">
+                    <h3 class="card-title">音声ファイルをアップロード</h3>
+                    <form id="uploadForm">
+                        <div class="form-group">
+                            <label for="audioFile" class="form-label">MP3ファイルを選択</label>
+                            <input type="file" id="audioFile" class="form-input" accept=".mp3" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">アップロード</button>
+                        <div id="uploadProgress" style="margin-top: 1rem;"></div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="settings" class="content-section" style="display: none;">
+                 <div class="card">
+                    <h3 class="card-title">設定</h3>
+                     <p>ここにアプリの設定項目を表示します（通知設定など）。</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const WORKER_URL = "https://radio-app-r2-uploader.str-radio.workers.dev";
+        const R2_PUBLIC_URL = "https://pub-26d657ea5e9642a09c6962ab87ca19e8.r2.dev";
+        // =========================
+
+        class AdminDashboard {
+            constructor() {
+                this.checkAuth();
+                this.bindEvents();
+                this.loadInitialData();
+                this.setupNavigation();
+            }
+
+            checkAuth() {
+                const isLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
+                if (!isLoggedIn) {
+                    window.location.href = 'admin-login.html';
+                }
+            }
+            
+            bindEvents() {
+                document.getElementById('logoutBtn').addEventListener('click', this.logout);
+                document.getElementById('uploadForm').addEventListener('submit', (e) => this.handleUpload(e));
+            }
+
+            async loadInitialData() {
+                const username = sessionStorage.getItem('adminUsername');
+                document.getElementById('welcomeMessage').textContent = `ようこそ, ${username} さん`;
+                
+                this.renderEpisodes(this.getMockEpisodes());
+                await this.loadAndRenderAudioFiles();
+            }
+
+            setupNavigation() {
+                const navLinks = document.querySelectorAll('.sidebar-nav a');
+                const sections = document.querySelectorAll('.content-section');
+                const mainTitle = document.getElementById('mainTitle');
+
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                        
+                        const sectionId = link.dataset.section;
+                        mainTitle.textContent = link.textContent;
+
+                        sections.forEach(section => {
+                            if (section.id === sectionId) {
+                                section.style.display = 'block';
+                            } else {
+                                section.style.display = 'none';
+                            }
+                        });
+                    });
+                });
+            }
+            
+            renderEpisodes(episodes) {
+                const listElement = document.getElementById('episodeList');
+                listElement.innerHTML = '';
+                
+                episodes.forEach(ep => {
+                    const item = document.createElement('li');
+                    item.className = 'episode-item';
+                    item.innerHTML = `
+                        <div>
+                            <span class="episode-title">${ep.title}</span>
+                            <p style="font-size: 0.9rem; color: #666;">${new Date(ep.publishedAt).toLocaleDateString()}</p>
+                        </div>
+                        <div class="episode-actions">
+                            <button class="btn btn-secondary btn-notify" data-episode-id="${ep.id}">通知</button>
+                            <button class="btn btn-secondary" data-episode-id="${ep.id}">編集</button>
+                            <button class="btn btn-danger" data-episode-id="${ep.id}">削除</button>
+                        </div>
+                    `;
+                    listElement.appendChild(item);
+                });
+
+                // イベントリスナーを再設定
+                this.addNotificationEventListeners();
+            }
+
+            addNotificationEventListeners() {
+                const notifyButtons = document.querySelectorAll('.btn-notify');
+                notifyButtons.forEach(button => {
+                    button.addEventListener('click', (e) => this.handleNotify(e));
+                });
+            }
+
+            async handleNotify(e) {
+                const button = e.target;
+                const episodeId = button.dataset.episodeId;
+                
+                if (!confirm('このエピソードの公開を購読者全員に通知します。よろしいですか？')) {
+                    return;
+                }
+
+                button.disabled = true;
+                button.textContent = '送信中...';
+
+                try {
+                    const response = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Action': 'notify',
+                        },
+                        body: JSON.stringify({ episodeId: episodeId }),
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`通知の送信に失敗しました: ${errorText}`);
+                    }
+                    
+                    const result = await response.json();
+                    alert(`通知を送信しました！ (${result.successCount}件成功, ${result.errorCount}件失敗)`);
+
+                } catch (error) {
+                    console.error(error);
+                    alert(error.message);
+                } finally {
+                    button.disabled = false;
+                    button.textContent = '通知';
+                }
+            }
+
+            getMockEpisodes() {
+                // これは今後、実際にepisodes.jsonから読み込むように変更します
+                return [
+                    { id: "episode-001", title: "ウェルカムエピソード", publishedAt: "2024-01-15T10:00:00Z" },
+                    { id: "episode-002", title: "技術の深掘りトーク", publishedAt: "2024-01-22T10:00:00Z" },
+                    { id: "episode-003", title: "クリエイティブの未来", publishedAt: "2024-01-29T10:00:00Z" }
+                ];
+            }
+
+            async handleCreateEpisode(e) {
+                e.preventDefault();
+                const createBtn = e.target.querySelector('button');
+                createBtn.disabled = true;
+                createBtn.textContent = '作成中...';
+
+                try {
+                    const title = document.getElementById('episodeTitle').value;
+                    const description = document.getElementById('episodeDescription').value;
+                    const audioKey = document.getElementById('episodeAudio').value;
+
+                    if (!title || !description || !audioKey) {
+                        alert('すべてのフィールドを入力してください。');
+                        return;
+                    }
+                    
+                    // 新しいエピソードオブジェクトを作成
+                    const newEpisode = {
+                        id: `episode-${new Date().getTime()}`, // ユニークIDを生成
+                        title: title,
+                        description: description,
+                        audioUrl: `${R2_PUBLIC_URL}/${audioKey}`,
+                        coverImage: "covers/cover-400x400.png", // 固定カバー
+                        duration: "00:00", // TODO: 音声ファイルから取得する
+                        publishedAt: new Date().toISOString(),
+                        tags: [],
+                        likes: 0,
+                        comments: []
+                    };
+                    
+                    // Workerに送信
+                    const response = await fetch(WORKER_URL, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newEpisode),
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`エピソードの作成に失敗しました: ${errorText}`);
+                    }
+                    
+                    alert('エピソードが正常に作成・公開されました！');
+                    
+                    // フォームをリセット
+                    e.target.reset();
+
+                    // TODO: エピソード一覧を再読み込みする
+                    this.renderEpisodes(this.getMockEpisodes()); // 仮で再描画
+
+                } catch (error) {
+                    console.error(error);
+                    alert(error.message);
+                } finally {
+                    createBtn.disabled = false;
+                    createBtn.textContent = 'エピソードを作成';
+                }
+            }
+
+            async loadAndRenderAudioFiles() {
+                const selectElement = document.getElementById('episodeAudio');
+                if (!selectElement) {
+                    console.error('Error: episodeAudio select element not found.');
+                    return;
+                }
+                
+                // 既存のオプションをクリア（プレースホルダー以外）
+                selectElement.innerHTML = '<option value="">アップロード済みのファイルを選択</option>';
+
+                try {
+                    const response = await fetch(WORKER_URL);
+                    if (!response.ok) {
+                        throw new Error(`音声ファイル一覧の取得に失敗しました。Status: ${response.status}`);
+                    }
+                    
+                    const files = await response.json();
+
+                    if (!Array.isArray(files)) {
+                        console.error('Error: Received data is not an array.', files);
+                        return;
+                    }
+
+                    if (files.length === 0) {
+                        console.log('No audio files found in R2 bucket.');
+                        return;
+                    }
+
+                    files.forEach(file => {
+                        if (file && file.key && file.size) {
+                            const option = document.createElement('option');
+                            option.value = file.key;
+                            option.textContent = `${file.key} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                            selectElement.appendChild(option);
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Failed to load and render audio files:', error);
+                    // ユーザーにエラーを通知するUI処理をここに書くこともできる
+                }
+            }
+
+            async handleUpload(e) {
+                e.preventDefault();
+                const audioFileInput = document.getElementById('audioFile');
+                const file = audioFileInput.files[0];
+                const progressDiv = document.getElementById('uploadProgress');
+
+                if (!file) {
+                    progressDiv.textContent = 'ファイルが選択されていません。';
+                    progressDiv.style.color = 'red';
+                    return;
+                }
+
+                // ファイル名をサニタイズ（推奨）
+                const filename = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+
+                progressDiv.textContent = 'アップロードを開始します...';
+                progressDiv.style.color = 'black';
+
+                try {
+                    const response = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        body: file,
+                        headers: {
+                            'Content-Type': 'audio/mpeg',
+                            'X-Custom-Filename': filename,
+                        },
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`アップロードに失敗しました: ${errorText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    progressDiv.textContent = `✅ アップロード成功！`;
+                    progressDiv.style.color = 'green';
+                    
+                    console.log('File URL:', `${R2_PUBLIC_URL}/${result.filename}`);
+                    
+                    audioFileInput.value = '';
+
+                    // アップロード成功後にドロップダウンを再読み込み
+                    await this.loadAndRenderAudioFiles();
+
+                } catch (error) {
+                    console.error(error);
+                    progressDiv.textContent = `❌ ${error.message}`;
+                    progressDiv.style.color = 'red';
+                }
+            }
+
+            logout() {
+                sessionStorage.removeItem('adminLoggedIn');
+                sessionStorage.removeItem('adminUsername');
+                window.location.href = 'admin-login.html';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new AdminDashboard();
+            // イベントリスナーをここで登録
+            document.getElementById('newEpisodeForm').addEventListener('submit', (e) => app.handleCreateEpisode(e));
+        });
+    </script>
+</body>
+</html>

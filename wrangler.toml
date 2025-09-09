@@ -1,0 +1,13 @@
+name = "radio-app-r2-uploader" # Workerの名前（任意）
+main = "r2-upload-worker.js"    # Workerスクリプトのファイルパス
+compatibility_date = "2025-09-08" # 作成日の日付を指定
+compatibility_flags = ["nodejs_compat"]
+
+# R2バケットとの連携設定
+[[r2_buckets]]
+binding = "RADIO_APP_BUCKET" # Workerスクリプト内でアクセスする際の変数名
+bucket_name = "radio-app-audio" # Cloudflareダッシュボードで作成したR2バケット名
+
+[[kv_namespaces]]
+binding = "SUBSCRIPTIONS_KV"
+id = "90a61fdf3781494eaac461aaed3e3f0e"
