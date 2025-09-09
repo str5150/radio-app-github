@@ -41,6 +41,9 @@ export default {
         if (action === 'update_episode') {
           return await handleUpdateEpisodeRequest(request, env); // エピソード更新
         }
+        if (action === 'track_play') {
+          return await handleTrackPlayRequest(request, env); // 再生数を記録
+        }
         // actionがなければ通常のファイルアップロード
         return await handlePostRequest(request, env);
       
@@ -118,6 +121,68 @@ async function handleGetRequest(request, env) {
     });
   }
 }
+
+/**
+ * POSTリクエストを処理して再生数を記録する
+ */
+async function handleTrackPlayRequest(request, env) {
+    if (!env.GITHUB_TOKEN) {
+        return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { status: 500 });
+    }
+
+    try {
+        const { episodeId } = await request.json();
+        if (!episodeId) {
+            return new Response(JSON.stringify({ success: false, error: 'Episode ID is required.' }), { status: 400 });
+        }
+
+        // 1. 現在のepisodes.jsonを取得
+        const fileResponse = await fetch(GITHUB_API_URL, {
+            headers: { 'Authorization': `token ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker-Radio-App' }
+        });
+        if (!fileResponse.ok) throw new Error('Failed to fetch episodes.json');
+
+        const fileData = await fileResponse.json();
+        const currentContent = JSON.parse(atob(fileData.content));
+        const currentSha = fileData.sha;
+
+        // 2. 該当のエピソードを探してplayCountをインクリメント
+        const episodeIndex = currentContent.episodes.findIndex(ep => ep.id === episodeId);
+        if (episodeIndex === -1) {
+            // エピソードが見つからなくてもエラーにはせず、記録しないだけにする
+            console.log(`Track play: Episode ID ${episodeId} not found.`);
+            return new Response(JSON.stringify({ success: true, message: 'Episode not found, but acknowledged.' }), { status: 200 });
+        }
+        
+        const episode = currentContent.episodes[episodeIndex];
+        episode.playCount = (episode.playCount || 0) + 1;
+
+        // 3. 更新した内容でGitHubにプッシュ
+        const updatedContent = JSON.stringify(currentContent, null, 2);
+        const updateResponse = await fetch(GITHUB_API_URL, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker-Radio-App', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: `chore: Increment play count for ${episodeId}`,
+                content: btoa(updatedContent),
+                sha: currentSha,
+                branch: 'main',
+            }),
+        });
+
+        if (!updateResponse.ok) {
+            throw new Error(`Failed to update play count: ${updateResponse.statusText}`);
+        }
+
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+
+    } catch (e) {
+        console.error('Track Play Error:', e);
+        // このAPIはバックグラウンドで呼ばれるため、エラーレスポンスはシンプルにする
+        return new Response(JSON.stringify({ success: false }), { status: 500 });
+    }
+}
+
 
 /**
  * POSTリクエストを処理して特定のエピソードを更新する

@@ -10,7 +10,8 @@
       "publishedAt": "2025-09-09T06:09:49.407Z",
       "tags": [],
       "likes": 0,
-      "comments": []
+      "comments": [],
+      "playCount": 0
     },
     {
       "id": "episode-001",
@@ -25,7 +26,8 @@
         "紹介"
       ],
       "likes": 0,
-      "comments": []
+      "comments": [],
+      "playCount": 0
     },
     {
       "id": "episode-002",
@@ -35,13 +37,10 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "25:10",
       "publishedAt": "2024-01-22T10:00:00Z",
-      "tags": [
-        "技術",
-        "Web開発",
-        "PWA"
-      ],
+      "tags": ["technology", "deep-dive"],
       "likes": 0,
-      "comments": []
+      "comments": [],
+      "playCount": 0
     },
     {
       "id": "episode-003",
@@ -49,15 +48,12 @@
       "description": "デザイン、音楽、アート。さまざまな分野のクリエイターをゲストに迎え、未来のクリエイティブについて考えます。",
       "audioUrl": "https://example.com/audio/episode-003.mp3",
       "coverImage": "covers/cover-400x400.png",
-      "duration": "30:05",
+      "duration": "35:45",
       "publishedAt": "2024-01-29T10:00:00Z",
-      "tags": [
-        "クリエイティブ",
-        "デザイン",
-        "アート"
-      ],
+      "tags": ["creative", "future"],
       "likes": 0,
-      "comments": []
+      "comments": [],
+      "playCount": 0
     }
   ]
 }

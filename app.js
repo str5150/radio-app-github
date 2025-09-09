@@ -215,6 +215,7 @@ class RadioApp {
         this.isPlaying = true;
         this.updatePlayPauseIcon();
         this.updateMediaSession(episode);
+        this.trackPlay(episode.id); // 再生を記録
     }
     
     playNext() {
@@ -304,6 +305,19 @@ class RadioApp {
             navigator.mediaSession.setActionHandler('nexttrack', () => this.playNext());
             navigator.mediaSession.setActionHandler('previoustrack', () => this.playPrev());
         }
+    }
+
+    trackPlay(episodeId) {
+        const WORKER_URL = 'https://radio-app-r2-uploader.str-radio.workers.dev';
+        // バックグラウンドで再生回数を送信（エラーはコンソールに出力するだけ）
+        fetch(WORKER_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Action': 'track_play'
+            },
+            body: JSON.stringify({ episodeId })
+        }).catch(error => console.error('Failed to track play:', error));
     }
     
     toggleLike(episodeId) {
