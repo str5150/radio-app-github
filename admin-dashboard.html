@@ -193,7 +193,30 @@
             background-color: #e74c3c;
             color: white;
         }
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+        #episodesTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        #episodesTable th, #episodesTable td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        #episodesTable th {
+            font-weight: 600;
+            background-color: #f9fafb;
+        }
+        #episodesTable tbody tr:hover {
+            background-color: #f4f7f6;
+        }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
@@ -218,8 +241,27 @@
 
             <section id="dashboard" class="content-section">
                  <div class="card">
-                    <h3 class="card-title">統計</h3>
-                     <p>ここに統計情報を表示します（総再生回数、エピソード数など）。</p>
+                    <h3 class="card-title">月別統計グラフ</h3>
+                    <canvas id="analyticsChart" height="120"></canvas>
+                </div>
+                 <div class="card">
+                    <h3 class="card-title">エピソード別詳細</h3>
+                     <div class="table-container">
+                        <table id="episodesTable">
+                            <thead>
+                                <tr>
+                                    <th>タイトル</th>
+                                    <th>公開日</th>
+                                    <th>再生数</th>
+                                    <th>いいね数</th>
+                                    <th>コメント数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
             
@@ -342,6 +384,7 @@
                 
                 await this.fetchAndRenderEpisodes();
                 await this.loadAndRenderAudioFiles();
+                this.renderAnalytics();
             }
 
             setupNavigation() {
@@ -378,13 +421,82 @@
                         throw new Error(`episodes.jsonの読み込みに失敗しました: ${response.statusText}`);
                     }
                     const data = await response.json();
-                    this.renderEpisodes(data.episodes || []);
+                    this.episodes = data.episodes || []; // データをクラスプロパティに保存
+                    this.renderEpisodes(this.episodes);
                 } catch (error) {
                     console.error("Failed to fetch episodes:", error);
                     alert(error.message);
                     // エラーが起きても空のリストを描画
                     this.renderEpisodes([]);
                 }
+            }
+
+            renderAnalytics() {
+                if (!this.episodes || this.episodes.length === 0) return;
+
+                // 1. テーブルの描画
+                const tableBody = document.querySelector('#episodesTable tbody');
+                tableBody.innerHTML = '';
+                this.episodes.forEach(ep => {
+                    const row = `
+                        <tr>
+                            <td>${ep.title}</td>
+                            <td>${new Date(ep.publishedAt).toLocaleDateString()}</td>
+                            <td>${ep.playCount || 0}</td>
+                            <td>${ep.likes || 0}</td>
+                            <td>${ep.comments?.length || 0}</td>
+                        </tr>`;
+                    tableBody.innerHTML += row;
+                });
+
+                // 2. グラフの描画
+                const monthlyData = this.episodes.reduce((acc, ep) => {
+                    const month = new Date(ep.publishedAt).toISOString().slice(0, 7); // "YYYY-MM"
+                    if (!acc[month]) {
+                        acc[month] = { plays: 0, likes: 0, comments: 0 };
+                    }
+                    acc[month].plays += (ep.playCount || 0);
+                    acc[month].likes += (ep.likes || 0);
+                    acc[month].comments += (ep.comments?.length || 0);
+                    return acc;
+                }, {});
+
+                const sortedMonths = Object.keys(monthlyData).sort();
+                
+                const chartLabels = sortedMonths;
+                const playData = sortedMonths.map(m => monthlyData[m].plays);
+                const likeData = sortedMonths.map(m => monthlyData[m].likes);
+                const commentData = sortedMonths.map(m => monthlyData[m].comments);
+
+                const ctx = document.getElementById('analyticsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [
+                            {
+                                label: '再生数',
+                                data: playData,
+                                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                            },
+                            {
+                                label: 'いいね数',
+                                data: likeData,
+                                backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                            },
+                             {
+                                label: 'コメント数',
+                                data: commentData,
+                                backgroundColor: 'rgba(236, 77, 133, 0.7)',
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
             }
             
             renderEpisodes(episodes) {
@@ -500,6 +612,7 @@
                     alert('エピソードが更新されました！');
                     this.closeEditModal();
                     await this.fetchAndRenderEpisodes();
+                    this.renderAnalytics(); // 更新後にグラフを再描画
 
                 } catch (error) {
                     console.error('Update episode error:', error);
@@ -598,6 +711,7 @@
 
                     // エピソード一覧を再読み込みする
                     await this.fetchAndRenderEpisodes();
+                    this.renderAnalytics(); // 作成後にグラフを再描画
 
                 } catch (error) {
                     console.error(error);
@@ -696,6 +810,7 @@
                     audioFileInput.value = '';
 
                     await this.loadAndRenderAudioFiles();
+                    this.renderAnalytics(); // アップロード後にグラフを再描画
 
                 } catch (error) {
                     console.error('Upload failed:', error);
