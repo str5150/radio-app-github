@@ -438,7 +438,10 @@ function handleOptions(request) {
  * エピソード一覧更新リクエストを処理する（削除用）
  */
 async function handleUpdateEpisodesRequest(request, env) {
+  console.log('handleUpdateEpisodesRequest called');
+  
   if (!env.GITHUB_TOKEN) {
+    console.error('GitHub token is not configured');
     return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { 
       status: 500,
       headers: corsHeaders 
@@ -446,14 +449,20 @@ async function handleUpdateEpisodesRequest(request, env) {
   }
   
   try {
+    console.log('Parsing request JSON...');
     const updateData = await request.json();
+    console.log('Request data:', updateData);
+    
     const { episodes } = updateData;
 
     if (!episodes || !Array.isArray(episodes)) {
       throw new Error('Invalid episodes data');
     }
 
+    console.log(`Updating episodes list with ${episodes.length} episodes`);
+
     // 1. 現在のepisodes.jsonを取得
+    console.log('Fetching current episodes.json...');
     const fileResponse = await fetch(GITHUB_API_URL, {
       headers: {
         'Authorization': `token ${env.GITHUB_TOKEN}`,
@@ -463,16 +472,23 @@ async function handleUpdateEpisodesRequest(request, env) {
     });
 
     if (!fileResponse.ok) {
-      throw new Error(`Failed to fetch episodes.json: ${fileResponse.statusText}`);
+      const errorText = await fileResponse.text();
+      console.error('Failed to fetch episodes.json:', fileResponse.status, errorText);
+      throw new Error(`Failed to fetch episodes.json: ${fileResponse.status} ${fileResponse.statusText} - ${errorText}`);
     }
 
     const fileData = await fileResponse.json();
+    console.log('Current file data received');
+    
     const currentContent = JSON.parse(atob(fileData.content));
+    console.log('Current content parsed, episodes count:', currentContent.episodes.length);
 
     // 2. エピソード一覧を更新
     currentContent.episodes = episodes;
+    console.log('Updated content prepared');
 
     // 3. GitHubに更新をプッシュ
+    console.log('Pushing update to GitHub...');
     const updateResponse = await fetch(GITHUB_API_URL, {
       method: 'PUT',
       headers: {
@@ -490,9 +506,11 @@ async function handleUpdateEpisodesRequest(request, env) {
 
     if (!updateResponse.ok) {
       const errorData = await updateResponse.text();
-      throw new Error(`Failed to update GitHub: ${updateResponse.statusText} - ${errorData}`);
+      console.error('Failed to update GitHub:', updateResponse.status, errorData);
+      throw new Error(`Failed to update GitHub: ${updateResponse.status} ${updateResponse.statusText} - ${errorData}`);
     }
 
+    console.log('Update successful');
     return new Response(JSON.stringify({ success: true }), {
       headers: corsHeaders
     });

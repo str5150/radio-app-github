@@ -1325,6 +1325,12 @@
                         })
                     });
 
+                    if (!updateResponse.ok) {
+                        const errorText = await updateResponse.text();
+                        console.error('Worker response error:', updateResponse.status, errorText);
+                        throw new Error(`Worker error: ${updateResponse.status} ${updateResponse.statusText} - ${errorText}`);
+                    }
+
                     const result = await updateResponse.json();
                     if (result.success) {
                         alert('エピソードが削除されました');
