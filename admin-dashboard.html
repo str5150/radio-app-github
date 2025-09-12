@@ -894,6 +894,7 @@
                 // イベントリスナーを再設定
                 this.addNotificationEventListeners();
                 this.addEditEventListeners();
+                this.addDeleteEventListeners();
             }
 
             addNotificationEventListeners() {
@@ -909,6 +910,16 @@
                     button.addEventListener('click', (e) => {
                         const episodeId = e.target.closest('.episode-item').dataset.episodeId;
                         this.openEditModal(episodeId);
+                    });
+                });
+            }
+
+            addDeleteEventListeners() {
+                const deleteButtons = document.querySelectorAll('.btn-danger[data-episode-id]');
+                deleteButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const episodeId = e.target.dataset.episodeId;
+                        this.handleDeleteEpisode(episodeId);
                     });
                 });
             }
@@ -1283,6 +1294,54 @@
                     this.loadLetters();
                     this.updateLetterNotification();
                     this.renderAnalytics(); // Update analytics
+                }
+            }
+
+            async handleDeleteEpisode(episodeId) {
+                if (!confirm('このエピソードを削除しますか？この操作は取り消せません。')) {
+                    return;
+                }
+
+                try {
+                    // episodes.jsonから最新の情報を取得
+                    const response = await fetch(`https://str5150.github.io/radio-app-github/episodes.json?t=${new Date().getTime()}`);
+                    if (!response.ok) {
+                        throw new Error('エピソードデータの取得に失敗しました');
+                    }
+                    const data = await response.json();
+                    
+                    // 指定されたエピソードを削除
+                    const updatedEpisodes = data.episodes.filter(ep => ep.id !== episodeId);
+                    
+                    // episodes.jsonを更新
+                    const updateResponse = await fetch(this.WORKER_URL, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Action': 'update_episodes'
+                        },
+                        body: JSON.stringify({
+                            episodes: updatedEpisodes
+                        })
+                    });
+
+                    const result = await updateResponse.json();
+                    if (result.success) {
+                        alert('エピソードが削除されました');
+                        // ローカルデータも更新
+                        this.episodes = updatedEpisodes;
+                        this.renderEpisodes(this.episodes);
+                        this.renderAnalytics();
+                        // イベントリスナーを再設定
+                        this.addNotificationEventListeners();
+                        this.addEditEventListeners();
+                        this.addDeleteEventListeners();
+                    } else {
+                        throw new Error(result.error || 'エピソードの削除に失敗しました');
+                    }
+                } catch (error) {
+                    console.error('Delete episode error:', error);
+                    alert(`エピソードの削除に失敗しました: ${error.message}`);
                 }
             }
         }

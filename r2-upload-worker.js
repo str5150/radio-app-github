@@ -29,6 +29,9 @@ export default {
         return await handleGetRequest(request, env); // ファイル一覧取得
       
       case 'PUT':
+        if (action === 'update_episodes') {
+          return await handleUpdateEpisodesRequest(request, env); // エピソード一覧更新
+        }
         return await handlePutRequest(request, env); // episodes.json更新
       
       case 'POST':
@@ -427,6 +430,78 @@ function handleOptions(request) {
       headers: {
         Allow: 'GET, POST, PUT, OPTIONS',
       },
+    });
+  }
+}
+
+/**
+ * エピソード一覧更新リクエストを処理する（削除用）
+ */
+async function handleUpdateEpisodesRequest(request, env) {
+  if (!env.GITHUB_TOKEN) {
+    return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { 
+      status: 500,
+      headers: corsHeaders 
+    });
+  }
+  
+  try {
+    const updateData = await request.json();
+    const { episodes } = updateData;
+
+    if (!episodes || !Array.isArray(episodes)) {
+      throw new Error('Invalid episodes data');
+    }
+
+    // 1. 現在のepisodes.jsonを取得
+    const fileResponse = await fetch(GITHUB_API_URL, {
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Radio-App-Worker'
+      }
+    });
+
+    if (!fileResponse.ok) {
+      throw new Error(`Failed to fetch episodes.json: ${fileResponse.statusText}`);
+    }
+
+    const fileData = await fileResponse.json();
+    const currentContent = JSON.parse(atob(fileData.content));
+
+    // 2. エピソード一覧を更新
+    currentContent.episodes = episodes;
+
+    // 3. GitHubに更新をプッシュ
+    const updateResponse = await fetch(GITHUB_API_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Radio-App-Worker'
+      },
+      body: JSON.stringify({
+        message: `Update episodes list (${episodes.length} episodes)`,
+        content: btoa(JSON.stringify(currentContent, null, 2)),
+        sha: fileData.sha
+      })
+    });
+
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.text();
+      throw new Error(`Failed to update GitHub: ${updateResponse.statusText} - ${errorData}`);
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: corsHeaders
+    });
+
+  } catch (error) {
+    console.error('Update episodes error:', error);
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500,
+      headers: corsHeaders
     });
   }
 }
