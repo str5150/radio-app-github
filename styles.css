@@ -140,6 +140,9 @@ body {
 }
 
 .app-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-family: 'Orbitron', monospace;
     font-size: 28px;
     font-weight: 800;
@@ -148,6 +151,20 @@ body {
     text-decoration: none;
     text-transform: uppercase;
     line-height: 1;
+}
+
+.app-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+}
+
+.app-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
 
 .header-nav {
@@ -1315,6 +1332,16 @@ body.player-open {
     }
     
     .app-title {
+        font-size: 24px;
+        letter-spacing: 1.5px;
+    }
+    
+    .app-icon {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .app-text {
         font-size: 24px;
         letter-spacing: 1.5px;
     }
