@@ -488,6 +488,7 @@
                 <a href="#" data-section="episodes">エピソード管理</a>
                 <a href="#" data-section="upload">音声アップロード</a>
                 <a href="#" data-section="letters">レター確認 <span id="letterNotification" class="notification-badge" style="display: none;">0</span></a>
+                <a href="#" data-section="comments">コメント管理</a>
                 <a href="#" data-section="settings">設定</a>
                 <hr style="margin: 1rem 0; border: none; border-top: 1px solid #444;">
                 <a href="https://str5150.github.io/radio-app-github/" class="listener-link">🎧 リスナー画面に戻る</a>
@@ -604,6 +605,18 @@
                 </div>
             </section>
 
+            <section id="comments" class="content-section" style="display: none;">
+                <div class="card">
+                    <h3 class="card-title">コメント管理</h3>
+                    <div class="comments-controls">
+                        <button class="btn btn-danger" id="clearAllCommentsBtn">すべてのコメントを削除</button>
+                    </div>
+                    <div id="commentsList" class="comments-list">
+                        <!-- コメント一覧がここに表示されます -->
+                    </div>
+                </div>
+            </section>
+
             <section id="settings" class="content-section" style="display: none;">
                  <div class="card">
                     <h3 class="card-title">設定</h3>
@@ -716,6 +729,17 @@
                                 section.style.display = 'none';
                             }
                         });
+
+                        // Load section-specific data
+                        if (sectionId === 'dashboard') {
+                            this.renderAnalytics();
+                        } else if (sectionId === 'episodes') {
+                            this.renderEpisodes();
+                        } else if (sectionId === 'letters') {
+                            this.loadLetters();
+                        } else if (sectionId === 'comments') {
+                            this.loadComments();
+                        }
                     });
                 });
             }
@@ -1368,6 +1392,130 @@
                 }
             }
 
+            async loadComments() {
+                try {
+                    const response = await fetch(`https://str5150.github.io/radio-app-github/episodes.json?t=${new Date().getTime()}`);
+                    if (!response.ok) throw new Error('Failed to fetch episodes');
+                    const data = await response.json();
+                    
+                    const commentsList = document.getElementById('commentsList');
+                    commentsList.innerHTML = '';
+                    
+                    let hasComments = false;
+                    data.episodes.forEach(episode => {
+                        if (episode.comments && episode.comments.length > 0) {
+                            hasComments = true;
+                            episode.comments.forEach(comment => {
+                                const commentElement = document.createElement('div');
+                                commentElement.className = 'comment-item-admin';
+                                commentElement.innerHTML = `
+                                    <div class="comment-content">
+                                        <h4>${episode.title}</h4>
+                                        <p><strong>${comment.author}</strong> - ${new Date(comment.date).toLocaleString()}</p>
+                                        <p>${comment.text}</p>
+                                    </div>
+                                    <button class="btn btn-danger btn-sm delete-comment-btn" data-episode-id="${episode.id}" data-comment-id="${comment.id}">削除</button>
+                                `;
+                                commentsList.appendChild(commentElement);
+                            });
+                        }
+                    });
+                    
+                    if (!hasComments) {
+                        commentsList.innerHTML = '<p class="no-comments">コメントはまだありません。</p>';
+                    }
+                    
+                    // 削除ボタンのイベントリスナーを追加
+                    this.addCommentDeleteEventListeners();
+                    
+                } catch (error) {
+                    console.error('Error loading comments:', error);
+                    document.getElementById('commentsList').innerHTML = '<p class="error">コメントの読み込みに失敗しました。</p>';
+                }
+            }
+
+            addCommentDeleteEventListeners() {
+                const deleteButtons = document.querySelectorAll('.delete-comment-btn');
+                deleteButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const episodeId = e.target.dataset.episodeId;
+                        const commentId = e.target.dataset.commentId;
+                        this.deleteComment(episodeId, commentId);
+                    });
+                });
+            }
+
+            async deleteComment(episodeId, commentId) {
+                if (!confirm('このコメントを削除しますか？')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Action': 'delete_comment'
+                        },
+                        body: JSON.stringify({
+                            episodeId: episodeId,
+                            commentId: commentId
+                            // userId を送信しないことで管理者権限で削除
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('コメントの削除に失敗しました');
+                    }
+
+                    // コメント一覧を再読み込み
+                    this.loadComments();
+                    
+                } catch (error) {
+                    console.error('Delete comment error:', error);
+                    alert('コメントの削除に失敗しました: ' + error.message);
+                }
+            }
+
+            async clearAllComments() {
+                if (!confirm('すべてのコメントを削除しますか？この操作は取り消せません。')) {
+                    return;
+                }
+
+                try {
+                    // 各エピソードのコメントを空にする
+                    const response = await fetch(`https://str5150.github.io/radio-app-github/episodes.json?t=${new Date().getTime()}`);
+                    if (!response.ok) throw new Error('Failed to fetch episodes');
+                    const data = await response.json();
+                    
+                    data.episodes.forEach(episode => {
+                        episode.comments = [];
+                    });
+                    
+                    const updateResponse = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Action': 'update_episodes'
+                        },
+                        body: JSON.stringify({
+                            episodes: data.episodes
+                        })
+                    });
+
+                    if (!updateResponse.ok) {
+                        throw new Error('コメントの一括削除に失敗しました');
+                    }
+
+                    // コメント一覧を再読み込み
+                    this.loadComments();
+                    
+                } catch (error) {
+                    console.error('Clear all comments error:', error);
+                    alert('コメントの一括削除に失敗しました: ' + error.message);
+                }
+            }
+
             async handleDeleteEpisode(episodeId) {
                 if (!confirm('このエピソードを削除しますか？この操作は取り消せません。')) {
                     return;
@@ -1446,6 +1594,9 @@
             // Add letter control event listeners
             document.getElementById('markAllReadBtn').addEventListener('click', () => adminApp.markAllLettersAsRead());
             document.getElementById('clearAllLettersBtn').addEventListener('click', () => adminApp.clearAllLetters());
+            
+            // Add comment control event listeners
+            document.getElementById('clearAllCommentsBtn').addEventListener('click', () => adminApp.clearAllComments());
             
             // Add year selector event listener
             document.getElementById('yearSelect').addEventListener('change', () => {

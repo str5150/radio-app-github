@@ -62,6 +62,10 @@ export default {
           console.log('Routing to handleTrackPlayRequest');
           return await handleTrackPlayRequest(request, env); // 再生数を記録
         }
+        if (action === 'delete_comment') {
+          console.log('Routing to handleDeleteCommentRequest');
+          return await handleDeleteCommentRequest(request, env); // コメント削除
+        }
         // actionがなければ通常のファイルアップロード
         console.log('Routing to handlePostRequest (file upload)');
         return await handlePostRequest(request, env);
@@ -453,6 +457,106 @@ function handleOptions(request) {
       headers: {
         Allow: 'GET, POST, PUT, OPTIONS',
       },
+    });
+  }
+}
+
+/**
+ * コメント削除リクエストを処理する
+ */
+async function handleDeleteCommentRequest(request, env) {
+  console.log('handleDeleteCommentRequest called');
+  
+  if (!env.GITHUB_TOKEN) {
+    return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const { episodeId, commentId, userId } = await request.json();
+    console.log('Delete comment request:', { episodeId, commentId, userId });
+
+    // 1. 現在のepisodes.jsonを取得
+    const fileResponse = await fetch(GITHUB_API_URL, {
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Radio-App-Worker'
+      }
+    });
+
+    if (!fileResponse.ok) {
+      throw new Error('Failed to fetch episodes.json');
+    }
+
+    const fileData = await fileResponse.json();
+    const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
+
+    // 2. 該当のエピソードを検索
+    const episodeIndex = currentContent.episodes.findIndex(ep => ep.id === episodeId);
+    if (episodeIndex === -1) {
+      return new Response(JSON.stringify({ success: false, error: 'Episode not found.' }), { 
+        status: 404, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 3. コメントを検索して削除
+    const episode = currentContent.episodes[episodeIndex];
+    const commentIndex = episode.comments.findIndex(comment => comment.id === commentId);
+    
+    if (commentIndex === -1) {
+      return new Response(JSON.stringify({ success: false, error: 'Comment not found.' }), { 
+        status: 404, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 4. ユーザーIDチェック（管理者でない場合）
+    const comment = episode.comments[commentIndex];
+    if (userId && comment.userId !== userId) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized to delete this comment.' }), { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 5. コメントを削除
+    episode.comments.splice(commentIndex, 1);
+
+    // 6. GitHubに更新を送信
+    const updatedContent = JSON.stringify(currentContent, null, 2);
+    const updateResponse = await fetch(GITHUB_API_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Radio-App-Worker'
+      },
+      body: JSON.stringify({
+        message: `Delete comment from episode: ${episodeId}`,
+        content: Buffer.from(updatedContent, 'utf8').toString('base64'),
+        sha: fileData.sha
+      })
+    });
+
+    if (!updateResponse.ok) {
+      throw new Error('Failed to update episodes.json');
+    }
+
+    return new Response(JSON.stringify({ success: true, message: 'Comment deleted successfully!' }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (e) {
+    console.error('Delete Comment Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 }

@@ -810,9 +810,39 @@ class RadioApp {
         comments.forEach(comment => {
             const item = document.createElement('div');
             item.className = 'comment-item';
-            item.innerHTML = `<p>${comment.text}</p><small>${comment.author} - ${new Date(comment.date).toLocaleDateString()}</small>`;
+            
+            // 現在のユーザーIDを取得（ローカルストレージから）
+            const currentUserId = this.getCurrentUserId();
+            const isOwnComment = comment.userId === currentUserId;
+            
+            item.innerHTML = `
+                <div class="comment-content">
+                    <p>${comment.text}</p>
+                    <small>${comment.author} - ${new Date(comment.date).toLocaleDateString()}</small>
+                </div>
+                ${isOwnComment ? `<button class="delete-comment-btn" data-comment-id="${comment.id}">削除</button>` : ''}
+            `;
+            
+            // 削除ボタンのイベントリスナーを追加
+            const deleteBtn = item.querySelector('.delete-comment-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.deleteComment(comment.id);
+                });
+            }
+            
             this.elements.commentsList.appendChild(item);
         });
+    }
+
+    getCurrentUserId() {
+        let userId = localStorage.getItem('radioAppUserId');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('radioAppUserId', userId);
+        }
+        return userId;
     }
 
     async sendComment() {
@@ -821,10 +851,11 @@ class RadioApp {
         if (!text || !this.currentCommentEpisode) return;
         
         const newComment = {
-            id: String(Date.now()),
+            id: 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             text: text,
             author: name || '匿名',
-            date: new Date().toISOString()
+            date: new Date().toISOString(),
+            userId: this.getCurrentUserId()
         };
         
         if (!this.currentCommentEpisode.comments) {
@@ -841,6 +872,43 @@ class RadioApp {
         this.hideCommentModal();
         
         // コメント機能はメール通知なし
+    }
+
+    async deleteComment(commentId) {
+        if (!confirm('このコメントを削除しますか？')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('https://radio-app-r2-uploader.str-radio.workers.dev/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Action': 'delete_comment'
+                },
+                body: JSON.stringify({
+                    episodeId: this.currentCommentEpisode.id,
+                    commentId: commentId,
+                    userId: this.getCurrentUserId()
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('コメントの削除に失敗しました');
+            }
+
+            // ローカルのコメントからも削除
+            this.currentCommentEpisode.comments = this.currentCommentEpisode.comments.filter(
+                comment => comment.id !== commentId
+            );
+            
+            this.renderComments(this.currentCommentEpisode.comments);
+            this.updateCommentCount(this.currentCommentEpisode.id, this.currentCommentEpisode.comments.length);
+            
+        } catch (error) {
+            console.error('Delete comment error:', error);
+            alert('コメントの削除に失敗しました: ' + error.message);
+        }
     }
     
     updateCommentCount(episodeId, count) {
