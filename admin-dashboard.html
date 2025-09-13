@@ -735,7 +735,7 @@
                         if (sectionId === 'dashboard') {
                             this.renderAnalytics();
                         } else if (sectionId === 'episodes') {
-                            this.renderEpisodes();
+                            this.renderEpisodes(this.episodes);
                         } else if (sectionId === 'letters') {
                             this.loadLetters();
                         } else if (sectionId === 'comments') {
@@ -916,23 +916,38 @@
                 const listElement = document.getElementById('episodeList');
                 listElement.innerHTML = '';
                 
-                episodes.forEach(ep => {
-                    const item = document.createElement('li');
-                    item.className = 'episode-item';
-                    item.innerHTML = `
-                        <div>
-                            <span class="episode-title">${ep.title}</span>
-                            <p style="font-size: 0.9rem; color: #666;">${new Date(ep.publishedAt).toLocaleDateString()}</p>
-                        </div>
-                        <div class="episode-actions">
-                            <button class="btn btn-secondary btn-notify" data-episode-id="${ep.id}">通知</button>
-                            <button class="btn btn-secondary btn-edit" data-episode-id="${ep.id}">編集</button>
-                            <button class="btn btn-danger" data-episode-id="${ep.id}">削除</button>
+                // episodesがundefinedまたはnullの場合は空の配列を使用
+                const episodesToRender = episodes || [];
+                
+                if (episodesToRender.length === 0) {
+                    const emptyMessage = document.createElement('li');
+                    emptyMessage.className = 'episode-item';
+                    emptyMessage.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #666;">
+                            <p>エピソードがありません</p>
+                            <p style="font-size: 0.9rem;">新規エピソードを作成してください</p>
                         </div>
                     `;
-                    item.dataset.episodeId = ep.id;
-                    listElement.appendChild(item);
-                });
+                    listElement.appendChild(emptyMessage);
+                } else {
+                    episodesToRender.forEach(ep => {
+                        const item = document.createElement('li');
+                        item.className = 'episode-item';
+                        item.innerHTML = `
+                            <div>
+                                <span class="episode-title">${ep.title}</span>
+                                <p style="font-size: 0.9rem; color: #666;">${new Date(ep.publishedAt).toLocaleDateString()}</p>
+                            </div>
+                            <div class="episode-actions">
+                                <button class="btn btn-secondary btn-notify" data-episode-id="${ep.id}">通知</button>
+                                <button class="btn btn-secondary btn-edit" data-episode-id="${ep.id}">編集</button>
+                                <button class="btn btn-danger" data-episode-id="${ep.id}">削除</button>
+                            </div>
+                        `;
+                        item.dataset.episodeId = ep.id;
+                        listElement.appendChild(item);
+                    });
+                }
 
                 // イベントリスナーを再設定
                 this.addNotificationEventListeners();
