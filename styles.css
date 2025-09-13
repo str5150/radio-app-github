@@ -448,6 +448,7 @@ body {
 
 
 .episode-card {
+    position: relative;
     background-color: #ffffff;
     border: 1px solid #e5e5e5;
     border-radius: 8px;
@@ -1555,77 +1556,18 @@ body.player-open {
     }
 }
 
-/* シェアボタンスタイル */
-.share-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    transition: color 0.2s;
-}
-
-.share-btn:hover {
-    color: #1a1a1a;
-}
-
-.share-icon {
-    width: 18px;
-    height: 18px;
-}
-
-/* 共有モーダルスタイル */
-.share-options {
-    margin-top: 16px;
-}
-
-.share-option {
-    margin-bottom: 20px;
-}
-
-.share-option label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #1a1a1a;
-    font-size: 14px;
-}
-
-.link-container {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.share-link-input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
+/* NEW! ラベルのスタイル */
+.new-label {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background-color: #ff69b4; /* ピンク背景 */
+    color: #00bcd4; /* ティファニーブルー文字 */
+    padding: 4px 8px;
     border-radius: 4px;
-    font-size: 14px;
-    background-color: #f9f9f9;
-    color: #666;
-}
-
-.copy-btn {
-    padding: 8px 16px;
-    background-color: #1a1a1a;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    white-space: nowrap;
-    transition: background-color 0.2s;
-}
-
-.copy-btn:hover {
-    background-color: #333;
-}
-
-.copy-btn:active {
-    background-color: #000;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 10;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

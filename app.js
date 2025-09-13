@@ -272,156 +272,6 @@ class RadioApp {
         });
     }
 
-    // URLパラメータを処理してエピソードを直接表示・再生
-    handleURLParameters() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const episodeId = urlParams.get('episode');
-        const action = urlParams.get('action');
-        
-        if (episodeId) {
-            // 特定のエピソードを表示
-            const episodeIndex = this.episodes.findIndex(ep => ep.id === episodeId);
-            if (episodeIndex !== -1) {
-                if (action === 'play') {
-                    // 直接再生
-                    this.playEpisode(episodeIndex);
-                } else {
-                    // エピソードを表示（再生はしない）
-                    this.highlightEpisode(episodeIndex);
-                }
-            }
-        }
-    }
-
-    // エピソードをハイライト表示
-    highlightEpisode(index) {
-        // エピソードリストを表示
-        this.showAllEpisodes();
-        
-        // 該当エピソードをスクロールして表示
-        setTimeout(() => {
-            const episodeElement = document.querySelector(`[data-episode-index="${index}"]`);
-            if (episodeElement) {
-                episodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 100);
-    }
-
-    // エピソードの共有リンクを生成
-    generateEpisodeLink(episodeId, action = 'view') {
-        const baseUrl = window.location.origin + window.location.pathname;
-        return `${baseUrl}?episode=${episodeId}&action=${action}`;
-    }
-
-    // 共有モーダルを表示
-    showShareModal(episode) {
-        const viewLink = this.generateEpisodeLink(episode.id, 'view');
-        const playLink = this.generateEpisodeLink(episode.id, 'play');
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>エピソードを共有</h3>
-                    <button class="close-modal-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>${episode.title}</strong></p>
-                    <div class="share-options">
-                        <div class="share-option">
-                            <label>エピソードを表示するリンク:</label>
-                            <div class="link-container">
-                                <input type="text" value="${viewLink}" readonly class="share-link-input">
-                                <button class="copy-btn" data-link="${viewLink}">コピー</button>
-                            </div>
-                        </div>
-                        <div class="share-option">
-                            <label>エピソードを直接再生するリンク:</label>
-                            <div class="link-container">
-                                <input type="text" value="${playLink}" readonly class="share-link-input">
-                                <button class="copy-btn" data-link="${playLink}">コピー</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary close-modal-btn">閉じる</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // イベントリスナー
-        modal.querySelectorAll('.close-modal-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-        });
-        
-        modal.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const link = e.target.dataset.link;
-                const originalText = e.target.textContent;
-                
-                try {
-                    // まずClipboard APIを試す
-                    if (navigator.clipboard && window.isSecureContext) {
-                        await navigator.clipboard.writeText(link);
-                        e.target.textContent = 'コピー済み!';
-                        setTimeout(() => {
-                            e.target.textContent = originalText;
-                        }, 2000);
-                        return;
-                    }
-                } catch (err) {
-                    console.log('Clipboard API failed, trying fallback:', err);
-                }
-                
-                // フォールバック: 確実なコピー方法
-                try {
-                    const textArea = document.createElement('textarea');
-                    textArea.value = link;
-                    textArea.style.position = 'absolute';
-                    textArea.style.left = '-9999px';
-                    textArea.style.top = '-9999px';
-                    textArea.style.opacity = '0';
-                    textArea.setAttribute('readonly', '');
-                    document.body.appendChild(textArea);
-                    
-                    textArea.focus();
-                    textArea.select();
-                    textArea.setSelectionRange(0, 99999); // モバイル対応
-                    
-                    const successful = document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    
-                    if (successful) {
-                        e.target.textContent = 'コピー済み!';
-                        setTimeout(() => {
-                            e.target.textContent = originalText;
-                        }, 2000);
-                    } else {
-                        throw new Error('execCommand failed');
-                    }
-                } catch (err) {
-                    console.error('Copy failed:', err);
-                    e.target.textContent = 'コピー失敗';
-                    setTimeout(() => {
-                        e.target.textContent = originalText;
-                    }, 2000);
-                }
-            });
-        });
-        
-        // モーダル外クリックで閉じる
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                document.body.removeChild(modal);
-            }
-        });
-    }
 
     openPlayerScreen() {
         if (this.currentEpisodeIndex === -1) return; // Don't open if nothing is playing
@@ -506,21 +356,23 @@ class RadioApp {
         episodes.forEach((episode, index) => {
             // 注意：元の配列でのインデックスを見つける必要があるため、findindexを使用
             const originalIndex = this.episodes.findIndex(ep => ep.id === episode.id);
-            const card = this.createEpisodeCard(episode, originalIndex);
+            const isNew = (index === 0); // 最初のエピソード（最新）にNEW!ラベルを付ける
+            const card = this.createEpisodeCard(episode, originalIndex, isNew);
             this.elements.episodesList.appendChild(card);
         });
         this.restoreLikeStates();
         this.restoreBookmarkStates();
     }
 
-    createEpisodeCard(episode, index) {
+    createEpisodeCard(episode, index, isNew = false) {
         const card = document.createElement('div');
         card.className = 'episode-card';
         card.dataset.index = index;
-        card.dataset.episodeIndex = index;
         const publishedDate = new Date(episode.publishedAt).toLocaleDateString('ja-JP');
+        const newLabelHtml = isNew ? '<span class="new-label">NEW!</span>' : '';
 
         card.innerHTML = `
+            ${newLabelHtml}
             <img class="episode-cover-small" src="${episode.coverImage}" alt="${episode.title}">
             <div class="episode-content">
                 <h3 class="episode-title-small">${episode.title}</h3>
@@ -544,14 +396,11 @@ class RadioApp {
                     <button class="bookmark-btn" data-episode-id="${episode.id}" title="ブックマーク">
                         <svg class="bookmark-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>
                     </button>
-                    <button class="share-btn" data-episode-id="${episode.id}" title="共有">
-                        <svg class="share-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16,6 12,2 8,6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-                    </button>
                 </div>
             </div>`;
 
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.like-btn') || e.target.closest('.comment-btn') || e.target.closest('.letter-btn') || e.target.closest('.bookmark-btn') || e.target.closest('.share-btn')) return;
+            if (e.target.closest('.like-btn') || e.target.closest('.comment-btn') || e.target.closest('.letter-btn') || e.target.closest('.bookmark-btn')) return;
             this.playEpisode(index);
         });
 
@@ -570,10 +419,6 @@ class RadioApp {
         card.querySelector('.bookmark-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleBookmark(episode.id);
-        });
-        card.querySelector('.share-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.showShareModal(episode);
         });
         return card;
     }
@@ -1190,6 +1035,5 @@ class RadioApp {
 
 document.addEventListener('DOMContentLoaded', () => {
     const app = new RadioApp();
-    app.handleURLParameters(); // URLパラメータを処理
     initServiceWorker();
 });
