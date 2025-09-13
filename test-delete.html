@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Test</title>
+</head>
+<body>
+    <h1>Delete Test</h1>
+    <button onclick="testDelete()">Test Delete</button>
+    <div id="result"></div>
+
+    <script>
+        async function testDelete() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('https://radio-app-r2-uploader.str-radio.workers.dev/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Action': 'update_episodes'
+                    },
+                    body: JSON.stringify({
+                        episodes: []
+                    })
+                });
+                
+                const text = await response.text();
+                resultDiv.innerHTML = `Status: ${response.status}<br>Response: ${text}`;
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
