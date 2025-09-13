@@ -1385,16 +1385,30 @@
                     const updatedEpisodes = data.episodes.filter(ep => ep.id !== episodeId);
                     
                     // episodes.jsonを更新
+                    console.log('Sending delete request to:', this.WORKER_URL);
+                    console.log('Request headers:', {
+                        'Content-Type': 'application/json',
+                        'X-Action': 'update_episodes',
+                        'Accept': 'application/json'
+                    });
+                    console.log('Request body:', JSON.stringify({
+                        episodes: updatedEpisodes
+                    }));
+                    
                     const updateResponse = await fetch(this.WORKER_URL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-Action': 'update_episodes'
+                            'X-Action': 'update_episodes',
+                            'Accept': 'application/json'
                         },
                         body: JSON.stringify({
                             episodes: updatedEpisodes
                         })
                     });
+                    
+                    console.log('Response status:', updateResponse.status);
+                    console.log('Response headers:', Object.fromEntries(updateResponse.headers.entries()));
 
                     if (!updateResponse.ok) {
                         const errorText = await updateResponse.text();

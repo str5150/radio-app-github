@@ -25,6 +25,7 @@ export default {
     const action = request.headers.get('X-Action');
     console.log('Request method:', request.method);
     console.log('X-Action header:', action);
+    console.log('All headers:', Object.fromEntries(request.headers.entries()));
 
     switch (request.method) {
       case 'GET':
@@ -40,22 +41,29 @@ export default {
         return await handlePutRequest(request, env); // episodes.json更新
       
       case 'POST':
+        console.log('POST request received, action:', action);
         if (action === 'subscribe') {
+          console.log('Routing to handleSubscription');
           return await handleSubscription(request, env); // 購読情報保存
         }
         if (action === 'notify') {
+          console.log('Routing to handleNotification');
           return await handleNotification(request, env); // 通知送信
         }
         if (action === 'update_episode') {
+          console.log('Routing to handleUpdateEpisodeRequest');
           return await handleUpdateEpisodeRequest(request, env); // エピソード更新
         }
         if (action === 'update_episodes') {
+          console.log('Routing to handleUpdateEpisodesRequest');
           return await handleUpdateEpisodesRequest(request, env); // エピソード一覧更新（削除用）
         }
         if (action === 'track_play') {
+          console.log('Routing to handleTrackPlayRequest');
           return await handleTrackPlayRequest(request, env); // 再生数を記録
         }
         // actionがなければ通常のファイルアップロード
+        console.log('Routing to handlePostRequest (file upload)');
         return await handlePostRequest(request, env);
       
       default:
