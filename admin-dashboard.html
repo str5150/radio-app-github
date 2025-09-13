@@ -1385,7 +1385,7 @@
                     const updatedEpisodes = data.episodes.filter(ep => ep.id !== episodeId);
                     
                     // episodes.jsonを更新
-                    console.log('Sending delete request to:', this.WORKER_URL);
+                    console.log('Sending delete request to:', WORKER_URL);
                     console.log('Request headers:', {
                         'Content-Type': 'application/json',
                         'X-Action': 'update_episodes',
@@ -1395,7 +1395,7 @@
                         episodes: updatedEpisodes
                     }));
                     
-                    const updateResponse = await fetch(this.WORKER_URL, {
+                    const updateResponse = await fetch(WORKER_URL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
