@@ -74,7 +74,7 @@ async function handlePostRequest(request, env) {
     const filename = request.headers.get('X-Custom-Filename');
     console.log('Filename from header:', filename);
     
-    if (!filename || !filename.match(/^[\w\-.]+\.mp3$/)) {
+    if (!filename || !filename.match(/^[a-zA-Z0-9\-.]+\.mp3$/i)) {
       console.error('Invalid filename:', filename);
       return new Response(JSON.stringify({ success: false, error: 'Valid filename header (X-Custom-Filename) is required.' }), { 
         status: 400, 
@@ -182,7 +182,7 @@ async function handleTrackPlayRequest(request, env) {
             headers: { 'Authorization': `token ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker-Radio-App', 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: `chore: Increment play count for ${episodeId}`,
-                content: btoa(updatedContent),
+                content: Buffer.from(updatedContent, 'utf8').toString('base64'),
                 sha: currentSha,
                 branch: 'main',
             }),
@@ -242,7 +242,7 @@ async function handleUpdateEpisodeRequest(request, env) {
             headers: { 'Authorization': `token ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker-Radio-App', 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: `Update episode: ${updatedEpisodeData.title}`,
-                content: btoa(updatedContent),
+                content: Buffer.from(updatedContent, 'utf8').toString('base64'),
                 sha: currentSha,
                 branch: 'main',
             }),
@@ -310,7 +310,7 @@ async function handlePutRequest(request, env) {
       },
       body: JSON.stringify({
         message: `Create new episode: ${newEpisode.title}`,
-        content: btoa(updatedContent),
+        content: Buffer.from(updatedContent, 'utf8').toString('base64'),
         sha: currentSha,
         branch: 'main', // or your default branch
       }),
@@ -514,7 +514,7 @@ async function handleUpdateEpisodesRequest(request, env) {
       },
       body: JSON.stringify({
         message: `Update episodes list (${episodes.length} episodes)`,
-        content: btoa(JSON.stringify(currentContent, null, 2)),
+        content: Buffer.from(JSON.stringify(currentContent, null, 2), 'utf8').toString('base64'),
         sha: fileData.sha
       })
     });

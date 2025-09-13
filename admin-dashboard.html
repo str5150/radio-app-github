@@ -558,6 +558,10 @@
                             <textarea id="episodeDescription" class="form-textarea" required></textarea>
                         </div>
                         <div class="form-group">
+                            <label for="episodePublishDate" class="form-label">公開日時</label>
+                            <input type="datetime-local" id="episodePublishDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
                             <label for="episodeAudio" class="form-label">音声ファイル</label>
                              <select id="episodeAudio" class="form-input" required>
                                 <option value="">アップロード済みのファイルを選択</option>
@@ -627,6 +631,10 @@
                     <textarea id="editEpisodeDescription" class="form-textarea" required></textarea>
                 </div>
                 <div class="form-group">
+                    <label for="editEpisodePublishDate" class="form-label">公開日時</label>
+                    <input type="datetime-local" id="editEpisodePublishDate" class="form-input" required>
+                </div>
+                <div class="form-group">
                     <label for="editEpisodeAudio" class="form-label">音声ファイル</label>
                     <select id="editEpisodeAudio" class="form-input" required>
                         <!-- Options will be populated by JS -->
@@ -673,6 +681,11 @@
             async loadInitialData() {
                 const username = sessionStorage.getItem('adminUsername');
                 document.getElementById('welcomeMessage').textContent = `ようこそ, ${username} さん`;
+                
+                // 公開日時のデフォルト値を現在日時に設定
+                const now = new Date();
+                const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById('episodePublishDate').value = localDateTime;
                 
                 await this.fetchAndRenderEpisodes();
                 await this.loadAndRenderAudioFiles();
@@ -943,6 +956,11 @@
                 document.getElementById('editEpisodeId').value = episode.id;
                 document.getElementById('editEpisodeTitle').value = episode.title;
                 document.getElementById('editEpisodeDescription').value = episode.description;
+                
+                // 公開日時を設定（ISO形式からdatetime-local形式に変換）
+                const publishDate = new Date(episode.publishedAt);
+                const localDateTime = new Date(publishDate.getTime() - publishDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById('editEpisodePublishDate').value = localDateTime;
 
                 // 音声ファイルドロップダウンを生成
                 const audioSelect = document.getElementById('editEpisodeAudio');
@@ -977,6 +995,7 @@
                     id: document.getElementById('editEpisodeId').value,
                     title: document.getElementById('editEpisodeTitle').value,
                     description: document.getElementById('editEpisodeDescription').value,
+                    publishedAt: new Date(document.getElementById('editEpisodePublishDate').value).toISOString(),
                     audioUrl: document.getElementById('editEpisodeAudio').value,
                 };
 
@@ -1056,9 +1075,10 @@
                 try {
                     const title = document.getElementById('episodeTitle').value;
                     const description = document.getElementById('episodeDescription').value;
+                    const publishDate = document.getElementById('episodePublishDate').value;
                     const audioKey = document.getElementById('episodeAudio').value;
 
-                    if (!title || !description || !audioKey) {
+                    if (!title || !description || !publishDate || !audioKey) {
                         alert('すべてのフィールドを入力してください。');
                         return;
                     }
@@ -1068,10 +1088,10 @@
                         id: `episode-${new Date().getTime()}`, // ユニークIDを生成
                         title: title,
                         description: description,
+                        publishedAt: new Date(publishDate).toISOString(), // 公開日時をISO形式に変換
                         audioUrl: `${R2_PUBLIC_URL}/${audioKey}`,
                         coverImage: "covers/cover-400x400.png", // 固定カバー
                         duration: "00:00", // TODO: 音声ファイルから取得する
-                        publishedAt: new Date().toISOString(),
                         tags: [],
                         likes: 0,
                         comments: [],
