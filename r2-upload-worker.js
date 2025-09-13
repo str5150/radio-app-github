@@ -186,6 +186,13 @@ async function handleTrackPlayRequest(request, env) {
         
         const episode = currentContent.episodes[episodeIndex];
         episode.playCount = (episode.playCount || 0) + 1;
+        
+        // 再生履歴を記録（月別統計用）
+        const playDate = new Date().toISOString().slice(0, 7); // YYYY-MM形式
+        if (!episode.playHistory) {
+            episode.playHistory = {};
+        }
+        episode.playHistory[playDate] = (episode.playHistory[playDate] || 0) + 1;
 
         // 3. 更新した内容でGitHubにプッシュ
         const updatedContent = JSON.stringify(currentContent, null, 2);

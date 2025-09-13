@@ -492,8 +492,6 @@
                 <a href="#" data-section="letters">レター確認 <span id="letterNotification" class="notification-badge" style="display: none;">0</span></a>
                 <a href="#" data-section="comments">コメント管理</a>
                 <a href="#" data-section="settings">設定</a>
-                <hr style="margin: 1rem 0; border: none; border-top: 1px solid #444;">
-                <a href="https://str5150.github.io/radio-app-github/" class="listener-link">🎧 リスナー画面に戻る</a>
             </nav>
             <div class="sidebar-footer">
                 <p id="welcomeMessage" style="text-align: center; margin-bottom: 1rem;"></p>
@@ -890,29 +888,46 @@
             }
 
             aggregateActionsByMonth(monthlyData, selectedYear) {
-                // 1. 再生数（エピソード公開月に分散 - 実際のアクション日時がないため）
+                // 1. 再生数（実際の再生日ベース）
                 this.episodes.forEach(ep => {
-                    const publishMonth = new Date(ep.publishedAt).toISOString().slice(0, 7);
-                    if (publishMonth.startsWith(selectedYear)) {
-                        monthlyData[publishMonth].plays += (ep.playCount || 0);
+                    if (ep.playHistory) {
+                        Object.entries(ep.playHistory).forEach(([playMonth, count]) => {
+                            if (playMonth.startsWith(selectedYear) && monthlyData[playMonth]) {
+                                monthlyData[playMonth].plays += count;
+                            }
+                        });
                     }
                 });
 
-                // 2. いいね数（現在月に集計 - 実際のアクション日時がないため）
+                // 2. いいね数（現在月に集計 - 履歴データがない場合は現在月に集計）
                 const currentMonth = new Date().toISOString().slice(0, 7);
                 if (currentMonth.startsWith(selectedYear)) {
-                    const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
-                    Object.values(likeCounts).forEach(count => {
-                        monthlyData[currentMonth].likes += count;
+                    this.episodes.forEach(ep => {
+                        if (ep.likeHistory) {
+                            // 履歴データがある場合は履歴ベースで集計
+                            Object.entries(ep.likeHistory).forEach(([likeMonth, count]) => {
+                                if (likeMonth.startsWith(selectedYear) && monthlyData[likeMonth]) {
+                                    monthlyData[likeMonth].likes += count;
+                                }
+                            });
+                        } else {
+                            // 履歴データがない場合は現在月に集計（既存データとの互換性）
+                            monthlyData[currentMonth].likes += (ep.likes || 0);
+                        }
                     });
                 }
 
-                // 3. コメント数（現在月に集計）
-                if (currentMonth.startsWith(selectedYear)) {
-                    this.episodes.forEach(ep => {
-                        monthlyData[currentMonth].comments += (ep.comments?.length || 0);
-                    });
-                }
+                // 3. コメント数（実際のコメント日ベース）
+                this.episodes.forEach(ep => {
+                    if (ep.comments) {
+                        ep.comments.forEach(comment => {
+                            const commentMonth = new Date(comment.date).toISOString().slice(0, 7);
+                            if (commentMonth.startsWith(selectedYear) && monthlyData[commentMonth]) {
+                                monthlyData[commentMonth].comments += 1;
+                            }
+                        });
+                    }
+                });
 
                 // 4. レター数（レター送信日ベース）
                 const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
