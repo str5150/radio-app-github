@@ -1,6 +1,19 @@
 {
   "episodes": [
     {
+      "id": "episode-1757768348590",
+      "title": "[#5]喉風邪時々真ん中MTG〜Beat in the OMOYA",
+      "description": "20250731\n- 真ん中MTGでの発見　\n- 多様な視点を持つ重要性\n- 自分の“器”とどう向き合うか",
+      "publishedAt": "2025-07-31T12:54:00.000Z",
+      "audioUrl": "https://pub-26d657ea5e9642a09c6962ab87ca19e8.r2.dev/0731_5.MP3",
+      "coverImage": "covers/cover-400x400.png",
+      "duration": "00:00",
+      "tags": [],
+      "likes": 0,
+      "comments": [],
+      "playCount": 0
+    },
+    {
       "id": "episode-1757767332963",
       "title": "[#4]長すぎごめん。でも最後いい話だと思う〜Beat in the OMOYA",
       "description": "20250719\n- 親孝行weekで沖縄・山梨旅行の学び\n- 不二阿祖山太神宮でのスピリチュアル体験とビジネス学び\n- 高尾山夫婦合宿と地域活性化への感動\n- OFR48ライブと大人の活躍場所について\n- New Balance転職話と大手企業の仕組み\n- AI環境構築（Cursor×Gemini CLI×Obsidian）への情熱\n- プール通いと読書習慣のアップグレード\n- 人生とキャリアアップの考え方シェア",
