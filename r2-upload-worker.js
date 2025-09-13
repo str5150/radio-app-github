@@ -86,7 +86,7 @@ async function handlePostRequest(request, env) {
     const filename = request.headers.get('X-Custom-Filename');
     console.log('Filename from header:', filename);
     
-    if (!filename || !filename.match(/^[a-zA-Z0-9\-.]+\.mp3$/i)) {
+    if (!filename || !filename.match(/^[a-zA-Z0-9\-_.]+\.mp3$/i)) {
       console.error('Invalid filename:', filename);
       return new Response(JSON.stringify({ success: false, error: 'Valid filename header (X-Custom-Filename) is required.' }), { 
         status: 400, 

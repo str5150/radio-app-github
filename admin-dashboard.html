@@ -1242,10 +1242,6 @@
                     // 進捗バーをアニメーション
                     this.updateProgress(0, 'アップロード開始...');
                     
-                    // タイムアウトを延長（5分）
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分
-                    
                     // 進捗をシミュレート（実際の進捗は取得できないため）
                     const progressInterval = setInterval(() => {
                         const currentProgress = parseInt(progressFill.style.width) || 0;
@@ -1261,12 +1257,10 @@
                         headers: {
                             'Content-Type': 'audio/mpeg',
                             'X-Custom-Filename': filename,
-                        },
-                        signal: controller.signal
+                        }
                     });
                     
                     clearInterval(progressInterval);
-                    clearTimeout(timeoutId);
 
                     if (!response.ok) {
                         const errorText = await response.text();
@@ -1289,9 +1283,7 @@
                 } catch (error) {
                     console.error('Upload failed:', error);
                     
-                    if (error.name === 'AbortError') {
-                        this.updateProgress(0, '❌ アップロードがタイムアウトしました（5分）。ファイルサイズが大きすぎる可能性があります。');
-                    } else if (error.message.includes('Failed to fetch')) {
+                    if (error.message.includes('Failed to fetch')) {
                         this.updateProgress(0, '❌ ネットワークエラーが発生しました。接続を確認してください。');
                     } else {
                         this.updateProgress(0, `❌ ${error.message}`);
