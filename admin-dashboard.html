@@ -1315,7 +1315,7 @@
                     
                     // episodes.jsonを更新
                     const updateResponse = await fetch(this.WORKER_URL, {
-                        method: 'PUT',
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Action': 'update_episodes'

@@ -23,15 +23,20 @@ export default {
     }
 
     const action = request.headers.get('X-Action');
+    console.log('Request method:', request.method);
+    console.log('X-Action header:', action);
 
     switch (request.method) {
       case 'GET':
         return await handleGetRequest(request, env); // ファイル一覧取得
       
       case 'PUT':
+        console.log('PUT request received, action:', action);
         if (action === 'update_episodes') {
+          console.log('Routing to handleUpdateEpisodesRequest');
           return await handleUpdateEpisodesRequest(request, env); // エピソード一覧更新
         }
+        console.log('Routing to handlePutRequest');
         return await handlePutRequest(request, env); // episodes.json更新
       
       case 'POST':
@@ -44,6 +49,9 @@ export default {
         if (action === 'update_episode') {
           return await handleUpdateEpisodeRequest(request, env); // エピソード更新
         }
+        if (action === 'update_episodes') {
+          return await handleUpdateEpisodesRequest(request, env); // エピソード一覧更新（削除用）
+        }
         if (action === 'track_play') {
           return await handleTrackPlayRequest(request, env); // 再生数を記録
         }
@@ -51,6 +59,7 @@ export default {
         return await handlePostRequest(request, env);
       
       default:
+        console.log('Unhandled method:', request.method);
         return new Response('Method Not Allowed', { status: 405 });
     }
   },
