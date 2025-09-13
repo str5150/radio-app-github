@@ -427,7 +427,14 @@ class RadioApp {
     }
     
     playNext() {
-        this.playEpisode((this.currentEpisodeIndex + 1) % this.episodes.length);
+        const nextIndex = this.currentEpisodeIndex + 1;
+        if (nextIndex < this.episodes.length) {
+            this.playEpisode(nextIndex);
+        } else {
+            // 最後のエピソードの場合は停止
+            this.audio.pause();
+            this.updatePlayPauseIcon();
+        }
     }
     
     playPrev() {
