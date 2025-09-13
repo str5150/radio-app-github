@@ -107,8 +107,10 @@
       "tags": [],
       "likes": 0,
       "comments": [],
-      "playCount": 0,
-      "playHistory": {}
+      "playCount": 1,
+      "playHistory": {
+        "2025-09": 1
+      }
     }
   ]
 }
