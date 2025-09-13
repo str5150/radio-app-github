@@ -76,8 +76,8 @@ body {
 .search-expanded {
     position: absolute;
     top: 0;
-    left: 0;
     right: 0;
+    width: 300px;
     display: flex;
     align-items: center;
     background: white;
@@ -182,7 +182,7 @@ body {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 
 .admin-link {
