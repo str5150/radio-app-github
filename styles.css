@@ -271,12 +271,16 @@ body {
     margin-bottom: 24px;
     display: flex;
     align-items: center;
+    justify-content: center;
     min-height: 120px;
 }
 
 .hero-content {
     text-align: center;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .hero-title {
