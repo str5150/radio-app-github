@@ -782,9 +782,8 @@
                 tableBody.innerHTML = '';
                 this.episodes.forEach(ep => {
                     const letters = JSON.parse(localStorage.getItem('radioAppLetters') || '[]');
-                    const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
                     const episodeLetters = letters.filter(letter => letter.episodeId === ep.id).length;
-                    const episodeLikes = likeCounts[ep.id] || 0;
+                    const episodeLikes = ep.likes || 0;
                     const row = `
                         <tr>
                             <td>${ep.title}</td>
