@@ -96,6 +96,8 @@ class RadioApp {
             searchInput: document.getElementById('searchInput'),
             searchBtn: document.getElementById('searchBtn'),
             clearSearchBtn: document.getElementById('clearSearchBtn'),
+            searchToggleBtn: document.getElementById('searchToggleBtn'),
+            searchExpanded: document.getElementById('searchExpanded'),
             prevBtn: document.getElementById('prevBtn'),           // Will be null, handled below
             nextBtn: document.getElementById('nextBtn'),           // Will be null, handled below
             commentModal: document.getElementById('commentModal'),
@@ -171,6 +173,10 @@ class RadioApp {
         }
 
         // Search functionality
+        if (this.elements.searchToggleBtn) {
+            this.elements.searchToggleBtn.addEventListener('click', () => this.toggleSearch());
+        }
+        
         if (this.elements.searchInput) {
             this.elements.searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
             this.elements.searchInput.addEventListener('keypress', (e) => {
@@ -750,6 +756,26 @@ class RadioApp {
         
         // Render filtered episodes
         this.renderEpisodes(filteredEpisodes);
+    }
+
+    toggleSearch() {
+        if (this.elements.searchExpanded) {
+            const isExpanded = this.elements.searchExpanded.style.display !== 'none';
+            if (isExpanded) {
+                // Hide search
+                this.elements.searchExpanded.style.display = 'none';
+                this.clearSearch();
+            } else {
+                // Show search
+                this.elements.searchExpanded.style.display = 'flex';
+                // Focus on input after a short delay to ensure it's visible
+                setTimeout(() => {
+                    if (this.elements.searchInput) {
+                        this.elements.searchInput.focus();
+                    }
+                }, 100);
+            }
+        }
     }
 
     clearSearch() {
