@@ -1428,8 +1428,23 @@ body.player-open {
     }
     
     .speed-controls-large .speed-btn {
-        padding: 8px 12px;
-        font-size: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        background: #f5f5f5;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        min-width: 50px;
+    }
+    
+    .speed-controls-large .speed-btn:hover {
+        background: #e5e5e5;
+        color: #1a1a1a;
+    }
+    
+    .speed-controls-large .speed-btn.active {
+        background: #1a1a1a;
+        color: white;
+        border-color: #1a1a1a;
     }
     
     /* スマホでの説明文エリアの調整 */
@@ -1448,7 +1463,8 @@ body.player-open {
     /* スマホでの倍速コントロールの調整 */
     .speed-controls-large {
         margin-top: 8px;
-        margin-bottom: 20px;
+        margin-bottom: 80px; /* ブラウザナビゲーションバー分の余白を確保 */
+        padding-bottom: 20px;
     }
     
     /* スマホでの再生中ヘッダーの調整 */
