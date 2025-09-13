@@ -1545,3 +1545,56 @@ body.player-open {
         font-size: 12px;
     }
 }
+
+/* 共有モーダルスタイル */
+.share-options {
+    margin-top: 16px;
+}
+
+.share-option {
+    margin-bottom: 20px;
+}
+
+.share-option label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+.link-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.share-link-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #f9f9f9;
+    color: #666;
+}
+
+.copy-btn {
+    padding: 8px 16px;
+    background-color: #1a1a1a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.copy-btn:hover {
+    background-color: #333;
+}
+
+.copy-btn:active {
+    background-color: #000;
+}
