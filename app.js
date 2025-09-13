@@ -361,61 +361,59 @@ class RadioApp {
         });
         
         modal.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 const link = e.target.dataset.link;
+                const originalText = e.target.textContent;
                 
-                // モダンブラウザのClipboard APIを使用
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(link).then(() => {
+                try {
+                    // まずClipboard APIを試す
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(link);
                         e.target.textContent = 'コピー済み!';
                         setTimeout(() => {
-                            e.target.textContent = 'コピー';
+                            e.target.textContent = originalText;
                         }, 2000);
-                    }).catch((err) => {
-                        console.error('Failed to copy: ', err);
-                        fallbackCopy(link, e.target);
-                    });
-                } else {
-                    // フォールバック: 古いブラウザ用
-                    fallbackCopy(link, e.target);
+                        return;
+                    }
+                } catch (err) {
+                    console.log('Clipboard API failed, trying fallback:', err);
+                }
+                
+                // フォールバック: 確実なコピー方法
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = link;
+                    textArea.style.position = 'absolute';
+                    textArea.style.left = '-9999px';
+                    textArea.style.top = '-9999px';
+                    textArea.style.opacity = '0';
+                    textArea.setAttribute('readonly', '');
+                    document.body.appendChild(textArea);
+                    
+                    textArea.focus();
+                    textArea.select();
+                    textArea.setSelectionRange(0, 99999); // モバイル対応
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        e.target.textContent = 'コピー済み!';
+                        setTimeout(() => {
+                            e.target.textContent = originalText;
+                        }, 2000);
+                    } else {
+                        throw new Error('execCommand failed');
+                    }
+                } catch (err) {
+                    console.error('Copy failed:', err);
+                    e.target.textContent = 'コピー失敗';
+                    setTimeout(() => {
+                        e.target.textContent = originalText;
+                    }, 2000);
                 }
             });
         });
-        
-        // フォールバック用のコピー関数
-        const fallbackCopy = (text, button) => {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    button.textContent = 'コピー済み!';
-                    setTimeout(() => {
-                        button.textContent = 'コピー';
-                    }, 2000);
-                } else {
-                    button.textContent = 'コピー失敗';
-                    setTimeout(() => {
-                        button.textContent = 'コピー';
-                    }, 2000);
-                }
-            } catch (err) {
-                console.error('Fallback copy failed: ', err);
-                button.textContent = 'コピー失敗';
-                setTimeout(() => {
-                    button.textContent = 'コピー';
-                }, 2000);
-            }
-            
-            document.body.removeChild(textArea);
-        };
         
         // モーダル外クリックで閉じる
         modal.addEventListener('click', (e) => {

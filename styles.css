@@ -422,6 +422,9 @@ body {
 
 .episodes-grid.list-view .episode-title-small {
     -webkit-line-clamp: 2;
+    font-size: 16px;
+    line-height: 1.2;
+    margin-bottom: 4px;
 }
 
 .episodes-grid.list-view .episode-actions {
@@ -1438,6 +1441,12 @@ body.player-open {
         font-size: 18px;
     }
     
+    .episodes-grid.list-view .episode-title-small {
+        font-size: 14px;
+        line-height: 1.1;
+        margin-bottom: 2px;
+    }
+    
     .modal-content {
         padding: 24px;
     }
@@ -1527,8 +1536,8 @@ body.player-open {
     
     /* スマホでの倍速コントロールの調整 */
     .speed-controls-large {
-        margin-top: 4px;
-        margin-bottom: 100px; /* ブラウザナビゲーションバー分の余白を確保 */
+        margin-top: 16px;
+        margin-bottom: 80px; /* ブラウザナビゲーションバー分の余白を確保 */
         padding-bottom: 20px;
     }
     
