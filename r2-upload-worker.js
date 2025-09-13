@@ -161,7 +161,7 @@ async function handleTrackPlayRequest(request, env) {
         if (!fileResponse.ok) throw new Error('Failed to fetch episodes.json');
 
         const fileData = await fileResponse.json();
-        const currentContent = JSON.parse(atob(fileData.content));
+        const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
         const currentSha = fileData.sha;
 
         // 2. 該当のエピソードを探してplayCountをインクリメント
@@ -223,7 +223,7 @@ async function handleUpdateEpisodeRequest(request, env) {
         }
 
         const fileData = await fileResponse.json();
-        const currentContent = JSON.parse(atob(fileData.content));
+        const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
         const currentSha = fileData.sha;
 
         // 2. 該当のエピソードを検索して更新
@@ -292,7 +292,7 @@ async function handlePutRequest(request, env) {
     }
 
     const fileData = await fileResponse.json();
-    const currentContent = JSON.parse(atob(fileData.content));
+    const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
     const currentSha = fileData.sha;
 
     // 2. 新しいエピソードを追加
@@ -495,7 +495,7 @@ async function handleUpdateEpisodesRequest(request, env) {
     const fileData = await fileResponse.json();
     console.log('Current file data received');
     
-    const currentContent = JSON.parse(atob(fileData.content));
+    const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
     console.log('Current content parsed, episodes count:', currentContent.episodes.length);
 
     // 2. エピソード一覧を更新

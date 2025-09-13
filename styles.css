@@ -799,14 +799,37 @@ body.player-open {
     display: flex;
     align-items: center;
     justify-content: center;
+    background: none;
+    border: none;
+    color: #1a1a1a;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    transition: all 0.2s ease;
+}
+
+.now-playing__controls .control-btn:hover {
+    color: #666;
+    transform: scale(1.1);
 }
 
 .play-btn-large {
     width: 72px;
     height: 72px;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    border-radius: 50%;
+    background: none;
+    border: none;
+    color: #1a1a1a;
+    font-size: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.play-btn-large:hover {
+    color: #666;
+    transform: scale(1.1);
 }
 
 .speed-controls-large {
@@ -816,27 +839,24 @@ body.player-open {
 }
 
 .speed-controls-large .speed-btn {
-    padding: 12px 20px;
-    border-radius: 8px;
-    background: #f8f9fa;
+    padding: 8px 16px;
+    background: none;
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
-    color: #495057;
+    color: #666;
     transition: all 0.2s ease;
 }
 
 .speed-controls-large .speed-btn:hover {
-    background: #e9ecef;
-    transform: translateY(-1px);
+    color: #1a1a1a;
+    transform: scale(1.1);
 }
 
 .speed-controls-large .speed-btn.active {
-    background: #1a1a1a !important;
-    color: #ffffff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    color: #1a1a1a !important;
+    font-weight: 700;
 }
 
 /* モーダル */
@@ -906,21 +926,21 @@ body.player-open {
 .close-btn {
     background: none;
     border: none;
-    font-size: 24px;
-    color: #666666;
+    font-size: 28px;
+    color: #666;
     cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
+    padding: 8px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-    background-color: #f5f5f5;
+    color: #1a1a1a;
+    transform: scale(1.1);
 }
 
 .comment-section {
