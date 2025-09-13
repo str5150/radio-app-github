@@ -1,3 +1,17 @@
 {
-  "episodes": []
+  "episodes": [
+    {
+      "id": "test-episode-001",
+      "title": "テストエピソード",
+      "description": "これはテスト用のエピソードです。日本語文字が正しく表示されるかテストします。",
+      "audioUrl": "https://pub-26d657ea5e9642a09c6962ab87ca19e8.r2.dev/episode-006.mp3",
+      "coverImage": "covers/cover-400x400.png",
+      "duration": "00:00",
+      "publishedAt": "2025-09-13T05:45:00.000Z",
+      "tags": [],
+      "likes": 0,
+      "comments": [],
+      "playCount": 0
+    }
+  ]
 }
