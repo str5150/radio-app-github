@@ -1478,34 +1478,34 @@ body.player-open {
     
     /* スマホでの説明文エリアの調整 */
     .now-playing__info {
-        max-height: 150px;
+        max-height: 120px;
         overflow-y: auto;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
     
     /* スマホでの再生コントロールエリアの調整 */
     .now-playing__controls {
-        margin-top: 8px;
-        margin-bottom: 16px;
+        margin-top: 4px;
+        margin-bottom: 12px;
     }
     
     /* スマホでの倍速コントロールの調整 */
     .speed-controls-large {
-        margin-top: 8px;
-        margin-bottom: 80px; /* ブラウザナビゲーションバー分の余白を確保 */
+        margin-top: 4px;
+        margin-bottom: 100px; /* ブラウザナビゲーションバー分の余白を確保 */
         padding-bottom: 20px;
     }
     
     /* スマホでの再生中ヘッダーの調整 */
     .now-playing__header {
-        padding: 12px 16px;
-        height: 48px;
+        padding: 8px 16px;
+        height: 40px;
     }
     
     .now-playing__title-header {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
-        font-size: 14px;
+        font-size: 12px;
     }
 }
