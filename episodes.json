@@ -12,54 +12,6 @@
       "likes": 0,
       "comments": [],
       "playCount": 44
-    },
-    {
-      "id": "episode-001",
-      "title": "ウェルカムエピソード",
-      "description": "ラジオアプリへようこそ！このエピソードでは、アプリの使い方や今後の予定についてお話しします。",
-      "audioUrl": "https://example.com/audio/episode-001.mp3",
-      "coverImage": "covers/cover-400x400.png",
-      "duration": "15:30",
-      "publishedAt": "2024-01-15T10:00:00Z",
-      "tags": [
-        "ウェルカム",
-        "紹介"
-      ],
-      "likes": 0,
-      "comments": [],
-      "playCount": 0
-    },
-    {
-      "id": "episode-002",
-      "title": "技術の深掘りトーク",
-      "description": "最新のWeb技術や開発の裏側について、ディープに語ります。今回はService Workerの特集です。",
-      "audioUrl": "https://example.com/audio/episode-002.mp3",
-      "coverImage": "covers/cover-400x400.png",
-      "duration": "25:10",
-      "publishedAt": "2024-01-22T10:00:00Z",
-      "tags": [
-        "technology",
-        "deep-dive"
-      ],
-      "likes": 0,
-      "comments": [],
-      "playCount": 2
-    },
-    {
-      "id": "episode-003",
-      "title": "クリエイティブの未来",
-      "description": "デザイン、音楽、アート。さまざまな分野のクリエイターをゲストに迎え、未来のクリエイティブについて考えます。",
-      "audioUrl": "https://example.com/audio/episode-003.mp3",
-      "coverImage": "covers/cover-400x400.png",
-      "duration": "35:45",
-      "publishedAt": "2024-01-29T10:00:00Z",
-      "tags": [
-        "creative",
-        "future"
-      ],
-      "likes": 0,
-      "comments": [],
-      "playCount": 10
     }
   ]
 }

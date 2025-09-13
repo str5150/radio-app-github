@@ -1167,6 +1167,14 @@
 
                 try {
                     console.log(`Uploading ${filename} to worker...`);
+                    
+                    // アップロード進捗を表示
+                    progressDiv.textContent = `アップロード中... (0%)`;
+                    
+                    // タイムアウトを延長（5分）
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分
+                    
                     const response = await fetch(WORKER_URL, {
                         method: 'POST',
                         body: file,
@@ -1174,7 +1182,10 @@
                             'Content-Type': 'audio/mpeg',
                             'X-Custom-Filename': filename,
                         },
+                        signal: controller.signal
                     });
+                    
+                    clearTimeout(timeoutId);
 
                     if (!response.ok) {
                         const errorText = await response.text();
@@ -1195,9 +1206,15 @@
 
                 } catch (error) {
                     console.error('Upload failed:', error);
-                    progressDiv.textContent = `❌ ${error.message}`;
+                    
+                    if (error.name === 'AbortError') {
+                        progressDiv.textContent = `❌ アップロードがタイムアウトしました（5分）。ファイルサイズが大きすぎる可能性があります。`;
+                    } else if (error.message.includes('Failed to fetch')) {
+                        progressDiv.textContent = `❌ ネットワークエラーが発生しました。接続を確認してください。`;
+                    } else {
+                        progressDiv.textContent = `❌ ${error.message}`;
+                    }
                     progressDiv.style.color = 'red';
-                    alert(`エラーが発生しました: ${error.message}`);
                 } finally {
                     uploadButton.disabled = false;
                 }
