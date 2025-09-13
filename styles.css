@@ -269,10 +269,14 @@ body {
     padding: 24px 0;
     border-bottom: 1px solid #e5e5e5;
     margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    min-height: 120px;
 }
 
 .hero-content {
     text-align: center;
+    width: 100%;
 }
 
 .hero-title {
@@ -1363,6 +1367,7 @@ body.player-open {
     .hero-section {
         padding: 16px 0;
         margin-bottom: 16px;
+        min-height: 80px;
     }
     
     .hero-title {
