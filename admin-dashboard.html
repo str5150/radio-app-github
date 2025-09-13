@@ -577,7 +577,12 @@
                             <input type="file" id="audioFile" class="form-input" accept=".mp3" required>
                         </div>
                         <button type="submit" class="btn btn-primary">アップロード</button>
-                        <div id="uploadProgress" style="margin-top: 1rem;"></div>
+                        <div id="uploadProgress" style="margin-top: 1rem;">
+                            <div id="progressBar" style="display: none; width: 100%; background-color: #f0f0f0; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem;">
+                                <div id="progressFill" style="width: 0%; height: 20px; background-color: #007bff; transition: width 0.3s ease;"></div>
+                            </div>
+                            <div id="progressText" style="text-align: center; font-size: 0.9rem;"></div>
+                        </div>
                     </form>
                 </div>
             </section>
@@ -1151,29 +1156,44 @@
                 const audioFileInput = document.getElementById('audioFile');
                 const file = audioFileInput.files[0];
                 const progressDiv = document.getElementById('uploadProgress');
+                const progressBar = document.getElementById('progressBar');
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
                 const uploadButton = e.target.querySelector('button');
 
                 if (!file) {
-                    progressDiv.textContent = 'ファイルが選択されていません。';
-                    progressDiv.style.color = 'red';
+                    progressText.textContent = 'ファイルが選択されていません。';
+                    progressText.style.color = 'red';
                     return;
                 }
 
                 const filename = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
 
-                progressDiv.textContent = 'アップロード中...';
-                progressDiv.style.color = 'black';
+                // 進捗バーを表示
+                progressBar.style.display = 'block';
+                progressFill.style.width = '0%';
+                progressText.textContent = 'アップロード準備中...';
+                progressText.style.color = 'black';
                 uploadButton.disabled = true;
 
                 try {
                     console.log(`Uploading ${filename} to worker...`);
                     
-                    // アップロード進捗を表示
-                    progressDiv.textContent = `アップロード中... (0%)`;
+                    // 進捗バーをアニメーション
+                    this.updateProgress(0, 'アップロード開始...');
                     
                     // タイムアウトを延長（5分）
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分
+                    
+                    // 進捗をシミュレート（実際の進捗は取得できないため）
+                    const progressInterval = setInterval(() => {
+                        const currentProgress = parseInt(progressFill.style.width) || 0;
+                        if (currentProgress < 90) {
+                            const newProgress = Math.min(currentProgress + Math.random() * 10, 90);
+                            this.updateProgress(newProgress, `アップロード中... ${Math.round(newProgress)}%`);
+                        }
+                    }, 500);
                     
                     const response = await fetch(WORKER_URL, {
                         method: 'POST',
@@ -1185,6 +1205,7 @@
                         signal: controller.signal
                     });
                     
+                    clearInterval(progressInterval);
                     clearTimeout(timeoutId);
 
                     if (!response.ok) {
@@ -1194,8 +1215,9 @@
 
                     const result = await response.json();
                     
-                    progressDiv.textContent = `✅ アップロード成功！`;
-                    progressDiv.style.color = 'green';
+                    // 成功時の進捗バー更新
+                    this.updateProgress(100, '✅ アップロード成功！');
+                    progressText.style.color = 'green';
                     
                     console.log('Upload successful:', result);
                     
@@ -1208,16 +1230,28 @@
                     console.error('Upload failed:', error);
                     
                     if (error.name === 'AbortError') {
-                        progressDiv.textContent = `❌ アップロードがタイムアウトしました（5分）。ファイルサイズが大きすぎる可能性があります。`;
+                        this.updateProgress(0, '❌ アップロードがタイムアウトしました（5分）。ファイルサイズが大きすぎる可能性があります。');
                     } else if (error.message.includes('Failed to fetch')) {
-                        progressDiv.textContent = `❌ ネットワークエラーが発生しました。接続を確認してください。`;
+                        this.updateProgress(0, '❌ ネットワークエラーが発生しました。接続を確認してください。');
                     } else {
-                        progressDiv.textContent = `❌ ${error.message}`;
+                        this.updateProgress(0, `❌ ${error.message}`);
                     }
-                    progressDiv.style.color = 'red';
+                    progressText.style.color = 'red';
                 } finally {
                     uploadButton.disabled = false;
+                    // 3秒後に進捗バーを非表示
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                    }, 3000);
                 }
+            }
+
+            updateProgress(percentage, text) {
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = text;
             }
 
             logout() {

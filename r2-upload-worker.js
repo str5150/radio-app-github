@@ -69,20 +69,26 @@ export default {
  * POSTリクエストを処理してファイルをアップロードする
  */
 async function handlePostRequest(request, env) {
+  console.log('handlePostRequest called');
   try {
     const filename = request.headers.get('X-Custom-Filename');
+    console.log('Filename from header:', filename);
+    
     if (!filename || !filename.match(/^[\w\-.]+\.mp3$/)) {
+      console.error('Invalid filename:', filename);
       return new Response(JSON.stringify({ success: false, error: 'Valid filename header (X-Custom-Filename) is required.' }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
+    console.log('Starting R2 upload for:', filename);
     const object = await env.RADIO_APP_BUCKET.put(filename, request.body, {
       httpMetadata: {
         contentType: 'audio/mpeg',
       },
     });
+    console.log('R2 upload successful:', object.key, 'size:', object.size);
 
     return new Response(JSON.stringify({
       success: true,
