@@ -303,14 +303,6 @@ class RadioApp {
             const episodeElement = document.querySelector(`[data-episode-index="${index}"]`);
             if (episodeElement) {
                 episodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                episodeElement.style.border = '2px solid #1a1a1a';
-                episodeElement.style.borderRadius = '8px';
-                
-                // 3秒後にハイライトを削除
-                setTimeout(() => {
-                    episodeElement.style.border = '';
-                    episodeElement.style.borderRadius = '';
-                }, 3000);
             }
         }, 100);
     }
@@ -371,23 +363,59 @@ class RadioApp {
         modal.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const link = e.target.dataset.link;
-                navigator.clipboard.writeText(link).then(() => {
-                    e.target.textContent = 'コピー済み!';
-                    setTimeout(() => {
-                        e.target.textContent = 'コピー';
-                    }, 2000);
-                }).catch(() => {
-                    // フォールバック: テキストを選択
-                    const input = e.target.previousElementSibling;
-                    input.select();
-                    document.execCommand('copy');
-                    e.target.textContent = 'コピー済み!';
-                    setTimeout(() => {
-                        e.target.textContent = 'コピー';
-                    }, 2000);
-                });
+                
+                // モダンブラウザのClipboard APIを使用
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(link).then(() => {
+                        e.target.textContent = 'コピー済み!';
+                        setTimeout(() => {
+                            e.target.textContent = 'コピー';
+                        }, 2000);
+                    }).catch((err) => {
+                        console.error('Failed to copy: ', err);
+                        fallbackCopy(link, e.target);
+                    });
+                } else {
+                    // フォールバック: 古いブラウザ用
+                    fallbackCopy(link, e.target);
+                }
             });
         });
+        
+        // フォールバック用のコピー関数
+        const fallbackCopy = (text, button) => {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    button.textContent = 'コピー済み!';
+                    setTimeout(() => {
+                        button.textContent = 'コピー';
+                    }, 2000);
+                } else {
+                    button.textContent = 'コピー失敗';
+                    setTimeout(() => {
+                        button.textContent = 'コピー';
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
+                button.textContent = 'コピー失敗';
+                setTimeout(() => {
+                    button.textContent = 'コピー';
+                }, 2000);
+            }
+            
+            document.body.removeChild(textArea);
+        };
         
         // モーダル外クリックで閉じる
         modal.addEventListener('click', (e) => {

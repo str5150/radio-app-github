@@ -1546,6 +1546,28 @@ body.player-open {
     }
 }
 
+/* シェアボタンスタイル */
+.share-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: color 0.2s;
+}
+
+.share-btn:hover {
+    color: #1a1a1a;
+}
+
+.share-icon {
+    width: 18px;
+    height: 18px;
+}
+
 /* 共有モーダルスタイル */
 .share-options {
     margin-top: 16px;
