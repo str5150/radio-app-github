@@ -344,19 +344,57 @@ class RadioApp {
             }
             const data = await response.json();
             this.episodes = data.episodes;
+            
+            // サーバーから実際のいいね数とコメント数を取得
+            await this.fetchEpisodeStats();
+            
             this.filterAndSortEpisodes('all'); // 初期表示
         } catch (error) {
             console.error('Error fetching episodes:', error);
         }
     }
 
+    async fetchEpisodeStats() {
+        const WORKER_URL = 'https://radio-app-r2-uploader.str-radio.workers.dev';
+        try {
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Action': 'get_episode_stats'
+                },
+                body: JSON.stringify({ episodeIds: this.episodes.map(ep => ep.id) })
+            });
+            
+            if (response.ok) {
+                const stats = await response.json();
+                // サーバーから取得した統計情報でエピソードを更新
+                this.episodes.forEach(episode => {
+                    if (stats[episode.id]) {
+                        episode.likes = stats[episode.id].likes || 0;
+                        episode.comments = stats[episode.id].comments || [];
+                        episode.playCount = stats[episode.id].playCount || 0;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch episode stats:', error);
+        }
+    }
+
     renderEpisodes(episodesToRender) {
         this.elements.episodesList.innerHTML = '';
         const episodes = episodesToRender || this.episodes;
+        
+        // 最新エピソードを特定するため、publishedAtでソート
+        const sortedEpisodes = [...episodes].sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+        const latestEpisodeId = sortedEpisodes[0]?.id;
+        console.log('Latest episode ID:', latestEpisodeId);
+        
         episodes.forEach((episode, index) => {
             // 注意：元の配列でのインデックスを見つける必要があるため、findindexを使用
             const originalIndex = this.episodes.findIndex(ep => ep.id === episode.id);
-            const isNew = (index === 0); // 最初のエピソード（最新）にNEW!ラベルを付ける
+            const isNew = (episode.id === latestEpisodeId); // 最新エピソードにNEW!ラベルを付ける
             const card = this.createEpisodeCard(episode, originalIndex, isNew);
             this.elements.episodesList.appendChild(card);
         });
@@ -370,6 +408,10 @@ class RadioApp {
         card.dataset.index = index;
         const publishedDate = new Date(episode.publishedAt).toLocaleDateString('ja-JP');
         const newLabelHtml = isNew ? '<span class="new-label">NEW!</span>' : '';
+        
+        if (isNew) {
+            console.log('Adding NEW label to episode:', episode.title);
+        }
 
         card.innerHTML = `
             ${newLabelHtml}
@@ -576,30 +618,51 @@ class RadioApp {
         }).catch(error => console.error('Failed to track play:', error));
     }
     
-    toggleLike(episodeId) {
+    async toggleLike(episodeId) {
         const episode = this.episodes.find(ep => ep.id === episodeId);
         if (!episode) return;
         
         const likedEpisodes = JSON.parse(localStorage.getItem('likedEpisodes') || '[]');
-        const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
-        
         const isLiked = likedEpisodes.includes(episodeId);
         
-        if (isLiked) {
-            // Unlike
-            likedEpisodes.splice(likedEpisodes.indexOf(episodeId), 1);
-            likeCounts[episodeId] = Math.max(0, (likeCounts[episodeId] || 0) - 1);
-        } else {
-            // Like
-            likedEpisodes.push(episodeId);
-            likeCounts[episodeId] = (likeCounts[episodeId] || 0) + 1;
+        try {
+            const WORKER_URL = 'https://radio-app-r2-uploader.str-radio.workers.dev';
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Action': isLiked ? 'unlike_episode' : 'like_episode'
+                },
+                body: JSON.stringify({ 
+                    episodeId: episodeId,
+                    userId: this.getCurrentUserId()
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (isLiked) {
+                    // Unlike
+                    likedEpisodes.splice(likedEpisodes.indexOf(episodeId), 1);
+                } else {
+                    // Like
+                    likedEpisodes.push(episodeId);
+                }
+                
+                localStorage.setItem('likedEpisodes', JSON.stringify(likedEpisodes));
+                
+                // サーバーから返された実際のいいね数で更新
+                episode.likes = result.likes;
+                this.updateLikeButton(episodeId, !isLiked);
+                this.updateLikeCount(episodeId, result.likes);
+            } else {
+                throw new Error('Failed to update like');
+            }
+        } catch (error) {
+            console.error('Error toggling like:', error);
+            alert('いいねの更新に失敗しました。');
         }
-        
-        localStorage.setItem('likedEpisodes', JSON.stringify(likedEpisodes));
-        localStorage.setItem('episodeLikeCounts', JSON.stringify(likeCounts));
-        
-        this.updateLikeButton(episodeId, !isLiked);
-        this.updateLikeCount(episodeId, likeCounts[episodeId]);
     }
 
     updateLikeButton(episodeId, isLiked) {
@@ -617,8 +680,8 @@ class RadioApp {
     }
 
     getEpisodeLikeCount(episodeId) {
-        const likeCounts = JSON.parse(localStorage.getItem('episodeLikeCounts') || '{}');
-        return likeCounts[episodeId] || 0;
+        const episode = this.episodes.find(ep => ep.id === episodeId);
+        return episode ? episode.likes || 0 : 0;
     }
 
     toggleBookmark(episodeId) {
@@ -887,28 +950,42 @@ class RadioApp {
         const text = this.elements.commentText.value.trim();
         if (!text || !this.currentCommentEpisode) return;
         
-        const newComment = {
-            id: 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            text: text,
-            author: name || '匿名',
-            date: new Date().toISOString(),
-            userId: this.getCurrentUserId()
-        };
-        
-        if (!this.currentCommentEpisode.comments) {
-            this.currentCommentEpisode.comments = [];
+        try {
+            const WORKER_URL = 'https://radio-app-r2-uploader.str-radio.workers.dev';
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Action': 'add_comment'
+                },
+                body: JSON.stringify({
+                    episodeId: this.currentCommentEpisode.id,
+                    text: text,
+                    author: name || '匿名',
+                    userId: this.getCurrentUserId()
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                // サーバーから返されたコメントリストで更新
+                this.currentCommentEpisode.comments = result.comments;
+                
+                this.renderComments(this.currentCommentEpisode.comments);
+                this.updateCommentCount(this.currentCommentEpisode.id, this.currentCommentEpisode.comments.length);
+                
+                // Clear form and close modal
+                this.elements.commentName.value = '';
+                this.elements.commentText.value = '';
+                this.hideCommentModal();
+            } else {
+                throw new Error('Failed to send comment');
+            }
+        } catch (error) {
+            console.error('Error sending comment:', error);
+            alert('コメントの送信に失敗しました。');
         }
-        this.currentCommentEpisode.comments.push(newComment);
-        
-        this.renderComments(this.currentCommentEpisode.comments);
-        this.updateCommentCount(this.currentCommentEpisode.id, this.currentCommentEpisode.comments.length);
-        
-        // Clear form and close modal
-        this.elements.commentName.value = '';
-        this.elements.commentText.value = '';
-        this.hideCommentModal();
-        
-        // コメント機能はメール通知なし
     }
 
     async deleteComment(commentId) {
@@ -934,10 +1011,10 @@ class RadioApp {
                 throw new Error('コメントの削除に失敗しました');
             }
 
-            // ローカルのコメントからも削除
-            this.currentCommentEpisode.comments = this.currentCommentEpisode.comments.filter(
-                comment => comment.id !== commentId
-            );
+            const result = await response.json();
+            
+            // サーバーから返されたコメントリストで更新
+            this.currentCommentEpisode.comments = result.comments;
             
             this.renderComments(this.currentCommentEpisode.comments);
             this.updateCommentCount(this.currentCommentEpisode.id, this.currentCommentEpisode.comments.length);
