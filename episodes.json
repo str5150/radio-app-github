@@ -123,9 +123,10 @@
       "tags": [],
       "likes": 0,
       "comments": [],
-      "playCount": 26,
+      "playCount": 27,
       "playHistory": {
-        "2025-09": 26
+        "2025-09": 26,
+        "2025-10": 1
       }
     }
   ]
