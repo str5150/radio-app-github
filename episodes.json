@@ -9,12 +9,12 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "00:00",
       "tags": [],
-      "likes": 0,
+      "likes": 2,
       "comments": [],
-      "playCount": 2,
+      "playCount": 6,
       "playHistory": {
         "2025-09": 1,
-        "2025-10": 1
+        "2025-10": 5
       }
     },
     {
@@ -26,7 +26,7 @@
       "coverImage": "covers/cover-400x400.png",
       "duration": "00:00",
       "tags": [],
-      "likes": 10,
+      "likes": 11,
       "comments": [],
       "playCount": 92,
       "playHistory": {
