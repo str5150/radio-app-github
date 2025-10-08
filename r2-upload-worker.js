@@ -66,6 +66,22 @@ export default {
           console.log('Routing to handleDeleteCommentRequest');
           return await handleDeleteCommentRequest(request, env); // コメント削除
         }
+        if (action === 'like_episode') {
+          console.log('Routing to handleLikeEpisodeRequest');
+          return await handleLikeEpisodeRequest(request, env); // いいね
+        }
+        if (action === 'unlike_episode') {
+          console.log('Routing to handleUnlikeEpisodeRequest');
+          return await handleUnlikeEpisodeRequest(request, env); // いいね取り消し
+        }
+        if (action === 'add_comment') {
+          console.log('Routing to handleAddCommentRequest');
+          return await handleAddCommentRequest(request, env); // コメント追加
+        }
+        if (action === 'get_episode_stats') {
+          console.log('Routing to handleGetEpisodeStatsRequest');
+          return await handleGetEpisodeStatsRequest(request, env); // 統計情報取得
+        }
         // actionがなければ通常のファイルアップロード
         console.log('Routing to handlePostRequest (file upload)');
         return await handlePostRequest(request, env);
@@ -654,6 +670,341 @@ async function handleUpdateEpisodesRequest(request, env) {
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       status: 500,
       headers: corsHeaders
+    });
+  }
+}
+
+/**
+ * いいね機能を処理する
+ */
+async function handleLikeEpisodeRequest(request, env) {
+  console.log('handleLikeEpisodeRequest called');
+  
+  if (!env.GITHUB_TOKEN) {
+    return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const { episodeId, userId } = await request.json();
+    console.log('Like episode request:', { episodeId, userId });
+
+    // 1. 現在のepisodes.jsonを取得
+    const fileResponse = await fetch(GITHUB_API_URL, {
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Radio-App-Worker'
+      }
+    });
+
+    if (!fileResponse.ok) {
+      throw new Error('Failed to fetch episodes.json');
+    }
+
+    const fileData = await fileResponse.json();
+    const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
+
+    // 2. 該当のエピソードを検索
+    const episodeIndex = currentContent.episodes.findIndex(ep => ep.id === episodeId);
+    if (episodeIndex === -1) {
+      return new Response(JSON.stringify({ success: false, error: 'Episode not found.' }), { 
+        status: 404, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 3. いいね数をインクリメント
+    const episode = currentContent.episodes[episodeIndex];
+    episode.likes = (episode.likes || 0) + 1;
+
+    // 4. GitHubに更新を送信
+    const updatedContent = JSON.stringify(currentContent, null, 2);
+    const updateResponse = await fetch(GITHUB_API_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Radio-App-Worker'
+      },
+      body: JSON.stringify({
+        message: `Like episode: ${episodeId}`,
+        content: Buffer.from(updatedContent, 'utf8').toString('base64'),
+        sha: fileData.sha
+      })
+    });
+
+    if (!updateResponse.ok) {
+      throw new Error('Failed to update episodes.json');
+    }
+
+    return new Response(JSON.stringify({ success: true, likes: episode.likes }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (e) {
+    console.error('Like Episode Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * いいね取り消し機能を処理する
+ */
+async function handleUnlikeEpisodeRequest(request, env) {
+  console.log('handleUnlikeEpisodeRequest called');
+  
+  if (!env.GITHUB_TOKEN) {
+    return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const { episodeId, userId } = await request.json();
+    console.log('Unlike episode request:', { episodeId, userId });
+
+    // 1. 現在のepisodes.jsonを取得
+    const fileResponse = await fetch(GITHUB_API_URL, {
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Radio-App-Worker'
+      }
+    });
+
+    if (!fileResponse.ok) {
+      throw new Error('Failed to fetch episodes.json');
+    }
+
+    const fileData = await fileResponse.json();
+    const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
+
+    // 2. 該当のエピソードを検索
+    const episodeIndex = currentContent.episodes.findIndex(ep => ep.id === episodeId);
+    if (episodeIndex === -1) {
+      return new Response(JSON.stringify({ success: false, error: 'Episode not found.' }), { 
+        status: 404, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 3. いいね数をデクリメント（0未満にはしない）
+    const episode = currentContent.episodes[episodeIndex];
+    episode.likes = Math.max(0, (episode.likes || 0) - 1);
+
+    // 4. GitHubに更新を送信
+    const updatedContent = JSON.stringify(currentContent, null, 2);
+    const updateResponse = await fetch(GITHUB_API_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Radio-App-Worker'
+      },
+      body: JSON.stringify({
+        message: `Unlike episode: ${episodeId}`,
+        content: Buffer.from(updatedContent, 'utf8').toString('base64'),
+        sha: fileData.sha
+      })
+    });
+
+    if (!updateResponse.ok) {
+      throw new Error('Failed to update episodes.json');
+    }
+
+    return new Response(JSON.stringify({ success: true, likes: episode.likes }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (e) {
+    console.error('Unlike Episode Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * コメント追加機能を処理する
+ */
+async function handleAddCommentRequest(request, env) {
+  console.log('handleAddCommentRequest called');
+  
+  if (!env.GITHUB_TOKEN) {
+    return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const { episodeId, text, author, userId } = await request.json();
+    console.log('Add comment request:', { episodeId, text, author, userId });
+
+    if (!text || !text.trim()) {
+      return new Response(JSON.stringify({ success: false, error: 'Comment text is required.' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 1. 現在のepisodes.jsonを取得
+    const fileResponse = await fetch(GITHUB_API_URL, {
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Radio-App-Worker'
+      }
+    });
+
+    if (!fileResponse.ok) {
+      throw new Error('Failed to fetch episodes.json');
+    }
+
+    const fileData = await fileResponse.json();
+    const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
+
+    // 2. 該当のエピソードを検索
+    const episodeIndex = currentContent.episodes.findIndex(ep => ep.id === episodeId);
+    if (episodeIndex === -1) {
+      return new Response(JSON.stringify({ success: false, error: 'Episode not found.' }), { 
+        status: 404, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 3. 新しいコメントを作成
+    const newComment = {
+      id: 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+      text: text.trim(),
+      author: author || '匿名',
+      date: new Date().toISOString(),
+      userId: userId
+    };
+
+    // 4. コメントを追加
+    const episode = currentContent.episodes[episodeIndex];
+    if (!episode.comments) {
+      episode.comments = [];
+    }
+    episode.comments.push(newComment);
+
+    // 5. GitHubに更新を送信
+    const updatedContent = JSON.stringify(currentContent, null, 2);
+    const updateResponse = await fetch(GITHUB_API_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Radio-App-Worker'
+      },
+      body: JSON.stringify({
+        message: `Add comment to episode: ${episodeId}`,
+        content: Buffer.from(updatedContent, 'utf8').toString('base64'),
+        sha: fileData.sha
+      })
+    });
+
+    if (!updateResponse.ok) {
+      throw new Error('Failed to update episodes.json');
+    }
+
+    return new Response(JSON.stringify({ success: true, comments: episode.comments }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (e) {
+    console.error('Add Comment Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * 統計情報取得機能を処理する
+ */
+async function handleGetEpisodeStatsRequest(request, env) {
+  console.log('handleGetEpisodeStatsRequest called');
+  
+  if (!env.GITHUB_TOKEN) {
+    return new Response(JSON.stringify({ success: false, error: 'GitHub token is not configured.' }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const { episodeIds } = await request.json();
+    console.log('Get episode stats request:', { episodeIds });
+
+    // 1. 現在のepisodes.jsonを取得
+    const fileResponse = await fetch(GITHUB_API_URL, {
+      headers: {
+        'Authorization': `token ${env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Radio-App-Worker'
+      }
+    });
+
+    if (!fileResponse.ok) {
+      throw new Error('Failed to fetch episodes.json');
+    }
+
+    const fileData = await fileResponse.json();
+    const currentContent = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
+
+    // 2. 統計情報を構築
+    const stats = {};
+    
+    if (episodeIds && Array.isArray(episodeIds)) {
+      // 特定のエピソードIDの統計情報のみを取得
+      episodeIds.forEach(episodeId => {
+        const episode = currentContent.episodes.find(ep => ep.id === episodeId);
+        if (episode) {
+          stats[episodeId] = {
+            likes: episode.likes || 0,
+            comments: episode.comments || [],
+            playCount: episode.playCount || 0
+          };
+        }
+      });
+    } else {
+      // すべてのエピソードの統計情報を取得
+      currentContent.episodes.forEach(episode => {
+        stats[episode.id] = {
+          likes: episode.likes || 0,
+          comments: episode.comments || [],
+          playCount: episode.playCount || 0
+        };
+      });
+    }
+
+    return new Response(JSON.stringify(stats), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (e) {
+    console.error('Get Episode Stats Error:', e);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 }
