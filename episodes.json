@@ -24,7 +24,10 @@
       "tags": [],
       "likes": 0,
       "comments": [],
-      "playCount": 0
+      "playCount": 1,
+      "playHistory": {
+        "2025-12": 1
+      }
     },
     {
       "id": "episode-1758798348315",
