@@ -901,26 +901,22 @@
                             {
                                 label: '再生数',
                                 data: playData,
-                                backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                                stack: 'stack1'
+                                backgroundColor: 'rgba(54, 162, 235, 0.8)'
                             },
                             {
                                 label: 'いいね数',
                                 data: likeData,
-                                backgroundColor: 'rgba(255, 99, 132, 0.8)',
-                                stack: 'stack1'
+                                backgroundColor: 'rgba(255, 99, 132, 0.8)'
                             },
                             {
                                 label: 'コメント数',
                                 data: commentData,
-                                backgroundColor: 'rgba(75, 192, 192, 0.8)',
-                                stack: 'stack1'
+                                backgroundColor: 'rgba(75, 192, 192, 0.8)'
                             },
                             {
                                 label: 'レター数',
                                 data: letterData,
-                                backgroundColor: 'rgba(255, 206, 86, 0.8)',
-                                stack: 'stack1'
+                                backgroundColor: 'rgba(255, 206, 86, 0.8)'
                             }
                         ]
                     },
@@ -934,10 +930,10 @@
                         },
                         scales: {
                             x: {
-                                stacked: true
+                                stacked: false
                             },
                             y: {
-                                stacked: true,
+                                stacked: false,
                                 beginAtZero: true
                             }
                         }
@@ -957,23 +953,27 @@
                     }
                 });
 
-                // 2. いいね数（現在月に集計 - 履歴データがない場合は現在月に集計）
-                const currentMonth = new Date().toISOString().slice(0, 7);
-                if (currentMonth.startsWith(selectedYear)) {
-                    this.episodes.forEach(ep => {
-                        if (ep.likeHistory) {
-                            // 履歴データがある場合は履歴ベースで集計
-                            Object.entries(ep.likeHistory).forEach(([likeMonth, count]) => {
-                                if (likeMonth.startsWith(selectedYear) && monthlyData[likeMonth]) {
-                                    monthlyData[likeMonth].likes += count;
-                                }
-                            });
-                        } else {
-                            // 履歴データがない場合は現在月に集計（既存データとの互換性）
-                            monthlyData[currentMonth].likes += (ep.likes || 0);
-                        }
-                    });
-                }
+                // 2. いいね数
+                // - likeHistory があれば「アクション発生月」で集計
+                // - likeHistory が無い場合は、互換性のため「公開月」に寄せて集計（現在月に全量を乗せない）
+                this.episodes.forEach(ep => {
+                    if (ep.likeHistory && typeof ep.likeHistory === 'object') {
+                        Object.entries(ep.likeHistory).forEach(([likeMonth, count]) => {
+                            if (String(likeMonth).startsWith(selectedYear) && monthlyData[likeMonth]) {
+                                monthlyData[likeMonth].likes += count;
+                            }
+                        });
+                        return;
+                    }
+
+                    const likes = ep.likes || 0;
+                    if (!likes || !ep.publishedAt) return;
+
+                    const publishedMonth = new Date(ep.publishedAt).toISOString().slice(0, 7);
+                    if (publishedMonth.startsWith(selectedYear) && monthlyData[publishedMonth]) {
+                        monthlyData[publishedMonth].likes += likes;
+                    }
+                });
 
                 // 3. コメント数（実際のコメント日ベース）
                 this.episodes.forEach(ep => {
