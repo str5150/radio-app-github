@@ -514,8 +514,7 @@
                         <div class="year-selector">
                             <label for="yearSelect">年:</label>
                             <select id="yearSelect" class="year-select">
-                                <option value="2024">2024年</option>
-                                <option value="2025" selected>2025年</option>
+                                <!-- Options will be populated by JS -->
                             </select>
                         </div>
                     </div>
@@ -714,10 +713,67 @@
                 document.getElementById('episodePublishDate').value = localDateTime;
                 
                 await this.fetchAndRenderEpisodes();
+                // 年セレクタはエピソード取得後に初期化（データがなくても現在年〜+2年は出す）
+                this.populateYearSelect();
                 await this.loadAndRenderAudioFiles();
                 this.renderAnalytics();
                 this.loadLetters();
                 this.updateLetterNotification();
+            }
+
+            populateYearSelect() {
+                const yearSelect = document.getElementById('yearSelect');
+                if (!yearSelect) return;
+
+                const currentYear = new Date().getFullYear();
+                const yearsFromData = new Set();
+
+                // episodes.json 由来の年（公開日/再生履歴/コメント日）
+                const episodes = this.episodes || [];
+                episodes.forEach(ep => {
+                    // publishedAt
+                    if (ep?.publishedAt) {
+                        const y = new Date(ep.publishedAt).getFullYear();
+                        if (!Number.isNaN(y)) yearsFromData.add(y);
+                    }
+                    // playHistory: { "YYYY-MM": count }
+                    if (ep?.playHistory && typeof ep.playHistory === 'object') {
+                        Object.keys(ep.playHistory).forEach(ym => {
+                            const y = parseInt(String(ym).slice(0, 4), 10);
+                            if (!Number.isNaN(y)) yearsFromData.add(y);
+                        });
+                    }
+                    // comments: [{ date }]
+                    if (Array.isArray(ep?.comments)) {
+                        ep.comments.forEach(c => {
+                            if (c?.date) {
+                                const y = new Date(c.date).getFullYear();
+                                if (!Number.isNaN(y)) yearsFromData.add(y);
+                            }
+                        });
+                    }
+                });
+
+                // UI/運用上は「現在年〜+2年」までは常に選べるようにする
+                const minYearFromData = yearsFromData.size ? Math.min(...yearsFromData) : currentYear;
+                const maxYearFromData = yearsFromData.size ? Math.max(...yearsFromData) : currentYear;
+                const minYear = Math.min(minYearFromData, currentYear);
+                const maxYear = Math.max(maxYearFromData, currentYear + 2);
+
+                // 選択中の年（または現在年）を維持
+                const previousValue = parseInt(yearSelect.value || '', 10);
+                const preferredYear = !Number.isNaN(previousValue) ? previousValue : currentYear;
+                const selectedYear = Math.min(Math.max(preferredYear, minYear), maxYear);
+
+                // options 再構築
+                yearSelect.innerHTML = '';
+                for (let y = minYear; y <= maxYear; y++) {
+                    const opt = document.createElement('option');
+                    opt.value = String(y);
+                    opt.textContent = `${y}年`;
+                    if (y === selectedYear) opt.selected = true;
+                    yearSelect.appendChild(opt);
+                }
             }
 
             setupNavigation() {
