@@ -17,6 +17,15 @@ export default {
       return handleOptions(request);
     }
 
+    // ===== 管理者認証ルーティング =====
+    // R2やGITHUB_TOKENに依存しないため、下の環境変数チェックより前で処理する。
+    if (request.method === 'POST') {
+      const authAction = request.headers.get('X-Action');
+      if (authAction === 'admin_login') return await handleAdminLogin(request, env);
+      if (authAction === 'admin_verify') return await handleAdminVerify(request, env);
+      if (authAction === 'admin_change_password') return await handleAdminChangePassword(request, env);
+    }
+
     // 環境変数チェック
     if (!env.RADIO_APP_BUCKET || !env.SUBSCRIPTIONS_KV || !env.VAPID_PRIVATE_KEY || !env.GITHUB_TOKEN) {
       return new Response('Required environment variables are not configured.', { status: 500 });
@@ -92,6 +101,158 @@ export default {
     }
   },
 };
+
+// ===================================================================
+// 管理者認証
+// パスワードはKVにPBKDF2ハッシュで保存し、平文をソース/リポジトリに置かない。
+// 初期パスワードと署名鍵は Cloudflare の Secret (env) から読む。
+//   - env.ADMIN_AUTH_SECRET      … トークン署名用のランダム秘密鍵（必須）
+//   - env.ADMIN_INITIAL_PASSWORD … 初期パスワード（KV未設定のとき1度だけ使用）
+// 保存先KV: SUBSCRIPTIONS_KV のキー 'admin:password'
+// ===================================================================
+const ADMIN_PW_KEY = 'admin:password';
+const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // トークン有効期限：12時間
+
+function authJson(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
+  });
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function hexToBytes(hex) {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+function base64urlFromBytes(bytes) {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function base64urlToBytes(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+// 文字列の定数時間比較（タイミング攻撃対策）
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+// PBKDF2-SHA256 (100k iterations) でパスワードを派生
+async function derivePasswordHash(password, saltBytes) {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  return bytesToHex(new Uint8Array(bits));
+}
+
+// 新しいsaltでパスワードをKVに保存
+async function saveAdminPassword(env, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await derivePasswordHash(password, salt);
+  await env.SUBSCRIPTIONS_KV.put(ADMIN_PW_KEY, JSON.stringify({ salt: bytesToHex(salt), hash }));
+}
+
+// パスワード照合。KV未設定なら初期パスワードと照合し、一致したらKVへ移行保存。
+async function checkAdminPassword(env, password) {
+  const stored = await env.SUBSCRIPTIONS_KV.get(ADMIN_PW_KEY);
+  if (stored) {
+    const { salt, hash } = JSON.parse(stored);
+    const computed = await derivePasswordHash(password, hexToBytes(salt));
+    return timingSafeEqual(computed, hash);
+  }
+  if (env.ADMIN_INITIAL_PASSWORD && password === env.ADMIN_INITIAL_PASSWORD) {
+    await saveAdminPassword(env, password); // 初回マイグレーション
+    return true;
+  }
+  return false;
+}
+
+// HMAC-SHA256 署名トークンを発行
+async function createAuthToken(env) {
+  const payloadB64 = base64urlFromBytes(
+    new TextEncoder().encode(JSON.stringify({ exp: Date.now() + TOKEN_TTL_MS }))
+  );
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(env.ADMIN_AUTH_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadB64));
+  return `${payloadB64}.${base64urlFromBytes(new Uint8Array(sig))}`;
+}
+
+// トークン検証（署名＋有効期限）
+async function verifyAuthToken(env, token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return false;
+  const [payloadB64, sigB64] = token.split('.');
+  if (!payloadB64 || !sigB64) return false;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(env.ADMIN_AUTH_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
+  );
+  let valid;
+  try {
+    valid = await crypto.subtle.verify('HMAC', key, base64urlToBytes(sigB64), new TextEncoder().encode(payloadB64));
+  } catch { return false; }
+  if (!valid) return false;
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(base64urlToBytes(payloadB64)));
+    return typeof payload.exp === 'number' && payload.exp > Date.now();
+  } catch { return false; }
+}
+
+// --- 認証エンドポイント ---
+async function handleAdminLogin(request, env) {
+  if (!env.SUBSCRIPTIONS_KV || !env.ADMIN_AUTH_SECRET) {
+    return authJson({ success: false, error: '認証が設定されていません（管理者に連絡してください）。' }, 500);
+  }
+  let body;
+  try { body = await request.json(); } catch { return authJson({ success: false, error: 'リクエストが不正です。' }, 400); }
+  const password = body && body.password;
+  if (!password) return authJson({ success: false, error: 'パスワードを入力してください。' }, 400);
+  const ok = await checkAdminPassword(env, password);
+  if (!ok) return authJson({ success: false, error: 'パスワードが正しくありません。' }, 401);
+  const token = await createAuthToken(env);
+  return authJson({ success: true, token });
+}
+
+async function handleAdminVerify(request, env) {
+  if (!env.ADMIN_AUTH_SECRET) return authJson({ valid: false });
+  let body;
+  try { body = await request.json(); } catch { return authJson({ valid: false }); }
+  const valid = await verifyAuthToken(env, body && body.token);
+  return authJson({ valid });
+}
+
+async function handleAdminChangePassword(request, env) {
+  if (!env.SUBSCRIPTIONS_KV || !env.ADMIN_AUTH_SECRET) {
+    return authJson({ success: false, error: '認証が設定されていません。' }, 500);
+  }
+  let body;
+  try { body = await request.json(); } catch { return authJson({ success: false, error: 'リクエストが不正です。' }, 400); }
+  const { currentPassword, newPassword } = body || {};
+  if (!currentPassword || !newPassword) return authJson({ success: false, error: '現在のパスワードと新しいパスワードを入力してください。' }, 400);
+  if (newPassword.length < 8) return authJson({ success: false, error: '新しいパスワードは8文字以上にしてください。' }, 400);
+  const ok = await checkAdminPassword(env, currentPassword);
+  if (!ok) return authJson({ success: false, error: '現在のパスワードが正しくありません。' }, 401);
+  await saveAdminPassword(env, newPassword);
+  return authJson({ success: true });
+}
 
 /**
  * POSTリクエストを処理してファイルをアップロードする

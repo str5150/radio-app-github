@@ -686,11 +686,34 @@
                 this.setupNavigation();
             }
 
-            checkAuth() {
+            async checkAuth() {
+                const token = sessionStorage.getItem('adminToken');
                 const isLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
-                if (!isLoggedIn) {
-                    window.location.href = 'admin-login.html';
+                if (!isLoggedIn || !token) {
+                    this.redirectToLogin();
+                    return;
                 }
+                // トークンの正当性をWorkerで検証（sessionStorage直書きによる不正入場を防ぐ）
+                try {
+                    const res = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Action': 'admin_verify' },
+                        body: JSON.stringify({ token })
+                    });
+                    const data = await res.json().catch(() => ({ valid: false }));
+                    if (!data.valid) {
+                        this.redirectToLogin();
+                    }
+                } catch (e) {
+                    this.redirectToLogin();
+                }
+            }
+
+            redirectToLogin() {
+                sessionStorage.removeItem('adminToken');
+                sessionStorage.removeItem('adminLoggedIn');
+                sessionStorage.removeItem('adminUsername');
+                window.location.href = 'admin-login.html';
             }
             
             bindEvents() {
@@ -704,7 +727,7 @@
             }
 
             async loadInitialData() {
-                const username = sessionStorage.getItem('adminUsername');
+                const username = sessionStorage.getItem('adminUsername') || '管理者';
                 document.getElementById('welcomeMessage').textContent = `ようこそ, ${username} さん`;
                 
                 // 公開日時のデフォルト値を現在日時に設定
@@ -1400,6 +1423,7 @@
             }
 
             logout() {
+                sessionStorage.removeItem('adminToken');
                 sessionStorage.removeItem('adminLoggedIn');
                 sessionStorage.removeItem('adminUsername');
                 window.location.href = 'admin-login.html';
